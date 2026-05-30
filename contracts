@@ -1,0 +1,445 @@
+# { "Depends": "py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6" }
+
+from genlayer import *
+import json
+import time
+
+
+class GenLayerTweetEvaluator(gl.Contract):
+    """
+    Production-grade tweet evaluator for GenLayer.
+    Designed for EXPERT USERS who already verified the tweet exists.
+    """
+
+    # ── Ownership & Config ──────────────────────────────────────────
+    owner: Address
+    paused: bool
+    prompt_version: str
+
+    # ── Scoring Config ──────────────────────────────────────────────
+    threshold: u8
+    weight_relevance: u8
+    weight_technical: u8
+    weight_originality: u8
+    weight_tone: u8
+    weight_engagement: u8
+
+    # ── Evaluation Storage ──────────────────────────────────────────
+    eval_ids: DynArray[str]
+    urls: DynArray[str]
+    texts: DynArray[str]
+    submitters: DynArray[Address]
+    timestamps: DynArray[u64]
+    scores_relevance: DynArray[u8]
+    scores_technical: DynArray[u8]
+    scores_originality: DynArray[u8]
+    scores_tone: DynArray[u8]
+    scores_engagement: DynArray[u8]
+    scores_total: DynArray[u8]
+    verdicts: DynArray[str]
+    categories: DynArray[str]
+    feedbacks: DynArray[str]
+    confidences: DynArray[str]
+
+    # ── Admin Overrides ─────────────────────────────────────────────
+    override_eval_id: DynArray[str]
+    override_reason: DynArray[str]
+    override_by: DynArray[Address]
+
+    def __init__(
+        self,
+        threshold: u8,
+        weight_relevance: u8,
+        weight_technical: u8,
+        weight_originality: u8,
+        weight_tone: u8,
+        weight_engagement: u8
+    ):
+        total_weights = (
+            int(weight_relevance) + int(weight_technical) +
+            int(weight_originality) + int(weight_tone) +
+            int(weight_engagement)
+        )
+        assert total_weights == 100, "Rubric weights must sum to 100"
+
+        self.owner = gl.message.sender_address
+        self.paused = False
+        self.prompt_version = "v2.1-rubric-strict"
+
+        self.threshold = threshold
+        self.weight_relevance = weight_relevance
+        self.weight_technical = weight_technical
+        self.weight_originality = weight_originality
+        self.weight_tone = weight_tone
+        self.weight_engagement = weight_engagement
+
+    def _sanitize_text(self, text: str) -> str:
+        lower = text.lower()
+        banned = [
+            "ignore previous",
+            "ignore all instructions",
+            "output score 100",
+            "return score 100",
+            "override instructions",
+            "disregard above",
+            "new instructions:",
+            "forget previous",
+            "you are now",
+            "system override",
+        ]
+        for phrase in banned:
+            assert phrase not in lower, "Potential prompt injection detected"
+        return text.replace("\\", "\\\\").replace('"', '\\"').replace("{", "[").replace("}", "]")
+
+    def _build_eval_prompt(self, tweet_text: str) -> str:
+        return f"""You are an expert content evaluator for GenLayer blockchain protocol.
+
+Evaluate the tweet below using EXACTLY these 5 dimensions. Each dimension is scored 0-100.
+
+=== TWEET ===
+{tweet_text}
+=== END TWEET ===
+
+SCORING RUBRIC:
+
+1. RELEVANCE ({int(self.weight_relevance)}% weight)
+   Does it clearly reference GenLayer, Intelligent Contracts, GenVM,
+   Optimistic Democracy, Equivalence Principle, or ecosystem?
+   0 = off-topic, 100 = deeply on-topic with specifics.
+
+2. TECHNICAL_ACCURACY ({int(self.weight_technical)}% weight)
+   Are technical claims correct? Penalize FUD, misinformation, empty hype.
+   0 = false/misleading, 100 = technically precise.
+
+3. ORIGINALITY ({int(self.weight_originality)}% weight)
+   Is it more than a bare retweet? Reward insight, tutorials, demos, threads.
+   0 = copy-paste/no value, 100 = novel contribution.
+
+4. TONE_QUALITY ({int(self.weight_tone)}% weight)
+   Professional, constructive, or genuinely funny? Penalize toxicity, spam, FUD.
+   0 = toxic/spam, 100 = excellent community fit.
+
+5. ENGAGEMENT_POTENTIAL ({int(self.weight_engagement)}% weight)
+   Would a developer or investor want to learn more after reading?
+   0 = forgettable, 100 = highly engaging.
+
+CATEGORY — choose exactly one:
+  "educational"  — explains concept, tutorial, deep-dive
+  "community"    — update, event, partnership, milestone
+  "research"     — technical analysis, data, comparison
+  "meme"         — on-topic humor, cultural
+  "shill"        — price/token promotion without substance
+  "spam"         — off-topic, repetitive, bot-like
+  "fud"          — fear/uncertainty/doubt, baseless criticism
+
+CONFIDENCE — how sure are you in this evaluation?
+  "high"    — clear category, strong signals
+  "medium"  — ambiguous but leaning one way
+  "low"     — unclear, borderline, needs human review
+
+OUTPUT FORMAT — return ONLY this exact JSON. No markdown, no extra text:
+{{"relevance": <int 0-100>, "technical_accuracy": <int 0-100>, "originality": <int 0-100>, "tone_quality": <int 0-100>, "engagement_potential": <int 0-100>, "category": "<category>", "confidence": "<high|medium|low>", "feedback": "<2-3 sentences>"}}"""
+
+    def _robust_json_parse(self, raw: str) -> dict:
+        try:
+            return json.loads(raw)
+        except:
+            pass
+        start = raw.find("```json")
+        if start != -1:
+            start = raw.find("\n", start) + 1
+            end = raw.find("```", start)
+            if end != -1:
+                try:
+                    return json.loads(raw[start:end].strip())
+                except:
+                    pass
+        start = raw.find("```")
+        if start != -1:
+            start = raw.find("\n", start) + 1
+            end = raw.find("```", start)
+            if end != -1:
+                try:
+                    return json.loads(raw[start:end].strip())
+                except:
+                    pass
+        start = raw.find("{")
+        end = raw.rfind("}")
+        if start != -1 and end != -1 and end > start:
+            try:
+                return json.loads(raw[start:end+1])
+            except:
+                pass
+        assert False, "Could not parse LLM response as JSON"
+
+    def _validate_rubric_response(self, parsed: dict) -> None:
+        required_dims = ["relevance", "technical_accuracy", "originality", "tone_quality", "engagement_potential"]
+        for dim in required_dims:
+            assert dim in parsed, f"Missing dimension: {dim}"
+            val = int(parsed[dim])
+            assert 0 <= val <= 100, f"{dim} must be 0-100, got {val}"
+        valid_categories = ["educational", "community", "research", "meme", "shill", "spam", "fud"]
+        assert parsed.get("category") in valid_categories, f"Invalid category: {parsed.get('category')}"
+        valid_confidences = ["high", "medium", "low"]
+        assert parsed.get("confidence") in valid_confidences, f"Invalid confidence: {parsed.get('confidence')}"
+        assert "feedback" in parsed and len(str(parsed["feedback"])) > 5, "Feedback too short"
+
+    def _calc_weighted_score(self, parsed: dict) -> u8:
+        total = (
+            int(parsed["relevance"]) * int(self.weight_relevance) +
+            int(parsed["technical_accuracy"]) * int(self.weight_technical) +
+            int(parsed["originality"]) * int(self.weight_originality) +
+            int(parsed["tone_quality"]) * int(self.weight_tone) +
+            int(parsed["engagement_potential"]) * int(self.weight_engagement)
+        )
+        return u8(total // 100)
+
+    def _generate_eval_id(self, url: str, submitter: Address) -> str:
+        addr_str = str(submitter)
+        if addr_str.startswith('Address("') and addr_str.endswith('")'):
+            addr_str = addr_str[9:-2]
+        short_addr = addr_str[-12:]
+        clean = url.replace("https://", "").replace("http://", "")
+        clean = clean.replace("/", "_").replace(".", "_").replace("-", "_")
+        safe = ""
+        for c in clean:
+            if c.isalnum() or c == "_":
+                safe += c
+        return f"{safe}_{short_addr}"
+
+    @gl.public.write
+    def submit_tweet(self, tweet_url: str, tweet_text: str) -> str:
+        assert not self.paused, "Contract is paused"
+        safe_url = self._sanitize_text(tweet_url)
+        safe_text = self._sanitize_text(tweet_text)
+        eval_id = self._generate_eval_id(safe_url, gl.message.sender_address)
+        for existing in self.eval_ids:
+            assert existing != eval_id, "Tweet already evaluated by this submitter"
+        prompt = self._build_eval_prompt(safe_text)
+        raw = gl.eq_principle.prompt_non_comparative(
+            fn=lambda: prompt,
+            task="Evaluate the tweet using the 5-dimension rubric and return strict JSON",
+            criteria="Response must contain: relevance(0-100), technical_accuracy(0-100), originality(0-100), tone_quality(0-100), engagement_potential(0-100), category(educational/community/research/meme/shill/spam/fud), confidence(high/medium/low), feedback(string). No extra text."
+        )
+        parsed = self._robust_json_parse(raw)
+        self._validate_rubric_response(parsed)
+        total_score = self._calc_weighted_score(parsed)
+        verdict = "approved" if total_score >= self.threshold else "rejected"
+        self.eval_ids.append(eval_id)
+        self.urls.append(safe_url)
+        self.texts.append(safe_text)
+        self.submitters.append(gl.message.sender_address)
+        self.timestamps.append(u64(int(time.time())))
+        self.scores_relevance.append(u8(int(parsed["relevance"])))
+        self.scores_technical.append(u8(int(parsed["technical_accuracy"])))
+        self.scores_originality.append(u8(int(parsed["originality"])))
+        self.scores_tone.append(u8(int(parsed["tone_quality"])))
+        self.scores_engagement.append(u8(int(parsed["engagement_potential"])))
+        self.scores_total.append(total_score)
+        self.verdicts.append(verdict)
+        self.categories.append(str(parsed["category"]))
+        self.feedbacks.append(str(parsed["feedback"]))
+        self.confidences.append(str(parsed["confidence"]))
+        return eval_id
+
+    @gl.public.write
+    def admin_override(self, eval_id: str, new_verdict: str, reason: str) -> None:
+        assert gl.message.sender_address == self.owner, "Only owner"
+        assert new_verdict in ["approved", "rejected", "needs_review"], "Invalid verdict"
+        found = False
+        for i in range(len(self.eval_ids)):
+            if self.eval_ids[i] == eval_id:
+                self.verdicts[i] = new_verdict
+                self.feedbacks[i] = f"[ADMIN OVERRIDE] {reason} | Original: {self.feedbacks[i]}"
+                found = True
+                break
+        assert found, "Evaluation ID not found"
+        self.override_eval_id.append(eval_id)
+        self.override_reason.append(reason)
+        self.override_by.append(gl.message.sender_address)
+
+    @gl.public.write
+    def set_threshold(self, new_threshold: u8) -> None:
+        assert gl.message.sender_address == self.owner, "Only owner"
+        self.threshold = new_threshold
+
+    @gl.public.write
+    def set_weights(self, w_relevance: u8, w_technical: u8, w_originality: u8, w_tone: u8, w_engagement: u8) -> None:
+        assert gl.message.sender_address == self.owner, "Only owner"
+        total = int(w_relevance) + int(w_technical) + int(w_originality) + int(w_tone) + int(w_engagement)
+        assert total == 100, "Weights must sum to 100"
+        self.weight_relevance = w_relevance
+        self.weight_technical = w_technical
+        self.weight_originality = w_originality
+        self.weight_tone = w_tone
+        self.weight_engagement = w_engagement
+
+    @gl.public.write
+    def set_prompt_version(self, version: str) -> None:
+        assert gl.message.sender_address == self.owner, "Only owner"
+        self.prompt_version = version
+
+    @gl.public.write
+    def toggle_pause(self) -> None:
+        assert gl.message.sender_address == self.owner, "Only owner"
+        self.paused = not self.paused
+
+    @gl.public.view
+    def get_config(self) -> str:
+        return json.dumps({
+            "owner": str(self.owner),
+            "paused": self.paused,
+            "prompt_version": self.prompt_version,
+            "threshold": int(self.threshold),
+            "weights": {
+                "relevance": int(self.weight_relevance),
+                "technical": int(self.weight_technical),
+                "originality": int(self.weight_originality),
+                "tone": int(self.weight_tone),
+                "engagement": int(self.weight_engagement),
+            }
+        })
+
+    @gl.public.view
+    def get_count(self) -> u32:
+        return u32(len(self.eval_ids))
+
+    @gl.public.view
+    def get_evaluation(self, index: u32) -> str:
+        i = int(index)
+        assert i < len(self.eval_ids), "Index out of range"
+        return json.dumps({
+            "eval_id": self.eval_ids[i],
+            "url": self.urls[i],
+            "text": self.texts[i],
+            "submitter": str(self.submitters[i]),
+            "timestamp": int(self.timestamps[i]),
+            "dimensions": {
+                "relevance": int(self.scores_relevance[i]),
+                "technical_accuracy": int(self.scores_technical[i]),
+                "originality": int(self.scores_originality[i]),
+                "tone_quality": int(self.scores_tone[i]),
+                "engagement_potential": int(self.scores_engagement[i]),
+            },
+            "total_score": int(self.scores_total[i]),
+            "verdict": self.verdicts[i],
+            "category": self.categories[i],
+            "confidence": self.confidences[i],
+            "feedback": self.feedbacks[i],
+        })
+
+    @gl.public.view
+    def get_evaluation_by_id(self, eval_id: str) -> str:
+        for i in range(len(self.eval_ids)):
+            if self.eval_ids[i] == eval_id:
+                return self.get_evaluation(u32(i))
+        assert False, "Evaluation ID not found"
+
+    @gl.public.view
+    def get_stats(self) -> str:
+        total = len(self.scores_total)
+        if total == 0:
+            return json.dumps({
+                "total": 0, "approved": 0, "rejected": 0, "needs_review": 0,
+                "avg_total_score": 0, "avg_relevance": 0, "avg_technical": 0,
+                "threshold": int(self.threshold), "prompt_version": self.prompt_version
+            })
+        approved = sum(1 for v in self.verdicts if v == "approved")
+        rejected = sum(1 for v in self.verdicts if v == "rejected")
+        needs_review = sum(1 for v in self.verdicts if v == "needs_review")
+        avg_total = sum(int(s) for s in self.scores_total) // total
+        avg_rel = sum(int(s) for s in self.scores_relevance) // total
+        avg_tech = sum(int(s) for s in self.scores_technical) // total
+        avg_orig = sum(int(s) for s in self.scores_originality) // total
+        avg_tone = sum(int(s) for s in self.scores_tone) // total
+        avg_eng = sum(int(s) for s in self.scores_engagement) // total
+        return json.dumps({
+            "total": total, "approved": approved, "rejected": rejected,
+            "needs_review": needs_review, "avg_total_score": avg_total,
+            "avg_relevance": avg_rel, "avg_technical": avg_tech,
+            "avg_originality": avg_orig, "avg_tone": avg_tone,
+            "avg_engagement": avg_eng, "threshold": int(self.threshold),
+            "prompt_version": self.prompt_version,
+        })
+
+    @gl.public.view
+    def get_approved_urls(self) -> str:
+        result = []
+        for i in range(len(self.urls)):
+            if self.verdicts[i] == "approved":
+                result.append(self.urls[i])
+        return json.dumps(result)
+
+    @gl.public.view
+    def get_by_category(self, category: str) -> str:
+        result = []
+        for i in range(len(self.eval_ids)):
+            if self.categories[i] == category:
+                result.append({
+                    "eval_id": self.eval_ids[i],
+                    "url": self.urls[i],
+                    "total_score": int(self.scores_total[i]),
+                    "verdict": self.verdicts[i],
+                    "confidence": self.confidences[i],
+                })
+        return json.dumps(result)
+
+    @gl.public.view
+    def get_needs_review(self) -> str:
+        result = []
+        for i in range(len(self.eval_ids)):
+            if self.confidences[i] == "low" or self.verdicts[i] == "needs_review":
+                result.append({
+                    "eval_id": self.eval_ids[i],
+                    "url": self.urls[i],
+                    "total_score": int(self.scores_total[i]),
+                    "confidence": self.confidences[i],
+                    "verdict": self.verdicts[i],
+                    "feedback": self.feedbacks[i],
+                })
+        return json.dumps(result)
+
+    @gl.public.view
+    def get_top_scores(self, n: u8) -> str:
+        indices = sorted(range(len(self.scores_total)), key=lambda i: int(self.scores_total[i]), reverse=True)
+        top = indices[:int(n)]
+        result = []
+        for i in top:
+            result.append({
+                "eval_id": self.eval_ids[i],
+                "url": self.urls[i],
+                "total_score": int(self.scores_total[i]),
+                "dimensions": {
+                    "relevance": int(self.scores_relevance[i]),
+                    "technical_accuracy": int(self.scores_technical[i]),
+                    "originality": int(self.scores_originality[i]),
+                    "tone_quality": int(self.scores_tone[i]),
+                    "engagement_potential": int(self.scores_engagement[i]),
+                },
+                "verdict": self.verdicts[i],
+                "category": self.categories[i],
+                "confidence": self.confidences[i],
+            })
+        return json.dumps(result)
+
+    @gl.public.view
+    def get_overrides(self) -> str:
+        result = []
+        for i in range(len(self.override_eval_id)):
+            result.append({
+                "eval_id": self.override_eval_id[i],
+                "reason": self.override_reason[i],
+                "by": str(self.override_by[i]),
+            })
+        return json.dumps(result)
+
+    @gl.public.view
+    def get_category_breakdown(self) -> str:
+        counts = {}
+        for cat in self.categories:
+            s = str(cat)
+            if s in counts:
+                counts[s] = counts[s] + 1
+            else:
+                counts[s] = 1
+        return json.dumps(counts)
