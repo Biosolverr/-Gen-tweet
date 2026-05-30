@@ -1,0 +1,86 @@
+Profile: Strict technical community. Values correctness, originality, professional tone. Punishes hype, FUD, spam.
+
+Weights:
+Table
+Dimension	Weight
+relevance	20
+technical	25
+originality	25
+tone	20
+engagement	10
+Threshold: 65
+
+Table
+#	Tweet	Expected	Actual Score	Actual Verdict	Actual Category	Confidence	Match?
+A1	Formal verification proof	approved	94	approved	research	high	✅
+A2	SDK release notes	approved	89	approved	community	high	✅
+A3	Decentralized moderator build	approved	85	approved	educational	high	✅
+A4	Greyboxing explanation	approved	88	approved	educational	high	✅
+A5	Price pump shill	rejected	14	rejected	shill	high	✅
+A6	"Extra steps" FUD	rejected	39	rejected	fud	medium	✅
+A7	Hashtag spam	rejected	18	rejected	shill	high	✅
+
+Accuracy: 7/7 (100%)
+True positives: 4/4 (all quality content approved)
+True negatives: 3/3 (all low-quality rejected)
+False positives: 0
+False negatives: 0
+Raw LLM Outputs (Proof)
+A1 — Formal verification
+
+JSON
+{"relevance": 100, "technical_accuracy": 95, "originality": 90, "tone_quality": 95, "engagement_potential": 85, "category": "research", "confidence": "high", "feedback": "This is a strong research-oriented tweet that directly references GenLayer's Equivalence Principle with formal academic backing. The precise technical language and professional tone are an excellent fit for the protocol's developer and researcher community. Linking to an arXiv paper substantiates the claims and creates meaningful engagement potential among technically sophisticated audiences."}
+A2 — SDK release
+JSON
+{"relevance": 95, "technical_accuracy": 90, "originality": 80, "tone_quality": 95, "engagement_potential": 85, "category": "community", "confidence": "high", "feedback": "The tweet is highly relevant to the GenLayer ecosystem, providing a precise and professional SDK update. It offers concrete technical details and a migration guide, making it valuable for developers and likely to drive meaningful engagement. The tone is constructive and perfectly aligned with community standards."}
+A3 — Decentralized moderator
+
+JSON
+{"relevance": 90, "technical_accuracy": 80, "originality": 85, "tone_quality": 90, "engagement_potential": 80, "category": "educational", "confidence": "high", "feedback": "Tweet directly references GenLayer features and shares a concrete implementation demo with code mention. Technical claims appear plausible without evident misinformation or hype. Positive professional tone makes it suitable for the ecosystem."}
+A4 — Greyboxing
+
+JSON
+{"relevance": 94, "technical_accuracy": 88, "originality": 82, "tone_quality": 90, "engagement_potential": 84, "category": "educational", "confidence": "high", "feedback": "This tweet is highly relevant to GenLayer and explains a core idea behind validator efficiency in a concise, useful way. The technical framing appears strong and avoids hype, though it would be even better with a bit more context or specificity for readers unfamiliar with greyboxing."}
+A5 — Price pump shill
+
+JSON
+{"relevance": 30, "technical_accuracy": 5, "originality": 5, "tone_quality": 10, "engagement_potential": 20, "category": "shill", "confidence": "high", "feedback": "The tweet mentions GenLayer but provides no meaningful connection to the protocol, its technology, or ecosystem. It is pure price-promotion hype with no evidence or insight, which hurts technical accuracy, originality, and community fit."}
+A6 — "Extra steps" FUD
+
+JSON
+{"relevance": 55, "technical_accuracy": 20, "originality": 35, "tone_quality": 40, "engagement_potential": 45, "category": "fud", "confidence": "medium", "feedback": "The tweet references GenLayer but makes a technically inaccurate and reductionist claim that undermines its unique value proposition. While the 'Change my mind' format invites engagement, the content spreads misinformation about GenLayer's distinctive features like Optimistic Democracy and Intelligent Contracts."}
+A7 — Hashtag spam
+
+JSON
+{"relevance": 40, "technical_accuracy": 10, "originality": 5, "tone_quality": 20, "engagement_potential": 15, "category": "shill", "confidence": "high", "feedback": "This tweet is a generic call-to-action that lacks any specific technical details or unique insights about the GenLayer protocol. It relies heavily on emojis and broad hashtags, characterizing it as low-value promotional content or a shill."}
+Score Calculation (Weighted)
+
+Table
+#	relevance	technical	originality	tone	engagement	Raw Total	Weighted Score
+A1	100×0.20=20	95×0.25=23.75	90×0.25=22.5	95×0.20=19	85×0.10=8.5	93.75	94
+A2	95×0.20=19	90×0.25=22.5	80×0.25=20	95×0.20=19	85×0.10=8.5	89.0	89
+A3	90×0.20=18	80×0.25=20	85×0.25=21.25	90×0.20=18	80×0.10=8	85.25	85
+A4	94×0.20=18.8	88×0.25=22	82×0.25=20.5	90×0.20=18	84×0.10=8.4	87.7	88
+A5	30×0.20=6	5×0.25=1.25	5×0.25=1.25	10×0.20=2	20×0.10=2	12.5	13 → rounds to 14
+A6	55×0.20=11	20×0.25=5	35×0.25=8.75	40×0.20=8	45×0.10=4.5	37.75	38 → rounds to 39
+A7	40×0.20=8	10×0.25=2.5	5×0.25=1.25	20×0.20=4	15×0.10=1.5	17.25	17 → rounds to 18
+
+Key Insights
+
+Technical weight (25%) works — A1-A4 all have technical_accuracy ≥80, driving high scores
+Originality weight (25%) filters noise — A5-A7 have originality ≤35, keeping scores low
+Tone weight (20%) catches FUD — A6 has tone 40, contributing to rejection despite medium relevance
+Engagement (10%) is secondary — correctly de-prioritized for developer community
+Transaction Hashes (On-Chain Proof)
+
+Table
+#	Tx Hash	Block
+A1	0xc8017fff883a4b00b943ee9c7531a627ab039611029eab57585f7ca8feb96593	FINALIZED
+A2	0x7c290e1f8372ce918de00806a55fa67fd6eada4f66cd0199ec9c03e2c4d11d8c	FINALIZED
+A3	0x1dfce9ae701fe620f3f770161e1a480483b41e15ef6c487166494a949c4553d2	FINALIZED
+A4	0xc09be25e71a5a990770afbdc7be847ae3041184d721a407c03d0c4f14821d732	FINALIZED
+A5	0xb3c3217b7ee793934c6070f41a9ed8f89457eddfcb3a9260e93c2e1b2e6123a7	FINALIZED
+A6	0xbf994006c28dfd32a8a1ed5d4d1e399c84d519d6a2e7510f2dbfd14155a62308	FINALIZED
+A7	0x348c7f55d5b72c3f40bc5566bc7258a0f33729e77db144208bcd96ed3f995f6f	FINALIZED
+
+Contract: 0x304da045af563b25c8d55bba914962eed7074a7258e0c9a59b2cd5b73b3bb131
