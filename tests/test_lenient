@@ -2,25 +2,18 @@ Profile: lenient
 
 Table
 Parameter	Value
-Threshold	              40
-Weight: Relevance	        20%
-Weight: Technical	        15%
-Weight: Originality	  20%
-Weight: Tone	        20%
-Weight: Engagement	  25%
-Sum of Weights	        100% 
-Banned Categories	        spam
-Min Technical	        5
-Min Tone	              10
+Threshold	40
+Weight: Relevance	20%
+Weight: Technical	15%
+Weight: Originality	20%
+Weight: Tone	20%
+Weight: Engagement	25%
+Sum of Weights	100%
+Banned Categories	spam
+Min Technical	5
+Min Tone	10
 
-
-Score Calculation Formula (lenient)
-
-Score = (relevance × 0.20)
-      + (technical_accuracy × 0.15)
-      + (originality × 0.20)
-      + (tone_quality × 0.20)
-      + (engagement_potential × 0.25)
+Score = (relevance × 0.20) + (technical_accuracy × 0.15) + (originality × 0.20) + (tone_quality × 0.20) + (engagement_potential × 0.25)
 
 Verdict:
   → rejected if category = "spam" (banned)
@@ -29,119 +22,196 @@ Verdict:
   → rejected if score < 40 (threshold)
   → approved otherwise
 
-
-Profile: lenient (Round 1)
-Profile Configuration
-
-Table
-Parameter	Value
-Name	- lenient
-Threshold	 - 40
-Weight relevance - 20% · 
-technical - 15% · 
-originality - 20% · 
-tone - 20% · engagement - 25%
-Banned Categories	- spam
-Min Technical	- 5
-Min Tone  -	10
-
-Description	Entry-level moderation. Allows most content except obvious spam.
-
 Block A — Builder/Technical
+
 Table
-ID	Tweet	Category	R	T	O	Tone	E	Score	Verdict	Hard   Rule
-A1	Thread on Optimistic Democracy + 
-Python simulator	                        research	    92	72	88	85	90	86	✅ approved	—
-A2	SDK race condition bug report	      research	    95	90	85	90	85	89	✅ approved	—
-A3	Tutorial: deploy first contract	educational	    95	90	85	95	90	91	✅ approved	—
-A4	Vague "trust me bro" claim	      spam	          30	5	10	5	15	14	❌ rejected	BANNED:spam
-A5	Copy-paste code without context	educational	    75	85	50	70	60	67	✅ approved	—
-A6	FUD: consensus fundamentally broken	fud	          85	0	20	0	15	25	❌ rejected	MIN_TONE:0<10
-A7	Bot spam with hashtags	            spam	          30	0	5	5	10	11	❌ rejected	BANNED:spam
+ID	Tweet	Category	R	T	O	Tone	E	Score	Verdict	Hard Rule
+A1	Thread on Optimistic Democracy + Python simulator	research	92	72	88	85	90	86	✅ approved	—
+A2	SDK race condition bug report	research	95	90	85	90	85	89	✅ approved	—
+A3	Tutorial: deploy first contract	educational	95	90	85	95	90	91	✅ approved	—
+A4	Vague "trust me bro" claim	spam	30	5	10	5	15	14	❌ rejected	BANNED:spam
+A5	Copy-paste code without context	educational	75	85	50	70	60	67	✅ approved	—
+A6	FUD: consensus fundamentally broken	fud	85	0	20	0	15	25	❌ rejected	MIN_TONE:0<10
+A7	Bot spam with hashtags	spam	30	0	5	5	10	11	❌ rejected	BANNED:spam
+
+Raw LLM Outputs (Proof)
+
+A1 — Thread on Optimistic Democracy
+{"relevance":92,"technical_accuracy":72,"originality":88,"tone_quality":85,"engagement_potential":90,"category":"research","confidence":"medium","feedback":"This tweet demonstrates strong relevance to GenLayer's Optimistic Democracy mechanism and presents original research with a Python simulator and quantitative results. The 99.7% consensus recovery claim is specific and interesting but cannot be fully verified without the linked code, which introduces some uncertainty in technical accuracy. The thread format with concrete scenarios and a GitHub link makes it highly engaging for developers interested in blockchain consensus mechanisms."}
+
+A2 — SDK race condition bug report
+{"relevance":95,"technical_accuracy":90,"originality":85,"tone_quality":90,"engagement_potential":85,"category":"research","confidence":"high","feedback":"This tweet effectively identifies and addresses a technical issue in the GenLayer SDK, contributing valuable insights to the community. The clear explanation of the problem and proposed fix enhances its utility and engagement."}
+
+A3 — Tutorial: deploy first contract
+{"relevance":95,"technical_accuracy":90,"originality":85,"tone_quality":95,"engagement_potential":90,"category":"educational","confidence":"high","feedback":"The tweet is highly relevant to GenLayer developers, offering a clear and structured tutorial for contract deployment. Technical steps appear accurate and align with standard CLI workflows, while the professional tone and actionable content drive strong engagement potential. It successfully delivers educational value without any spam or hype characteristics."}
+
+A4 — Vague "trust me bro" claim
+{"relevance":30,"technical_accuracy":5,"originality":10,"tone_quality":5,"engagement_potential":15,"category":"spam","confidence":"high","feedback":"The tweet uses low-quality 'trust me bro' language and lacks any specific technical information or value. It is categorized as spam due to its bot-like structure and request for DMs, resulting in a tone quality score below the minimum threshold."}
+
+A5 — Copy-paste code without context
+{"relevance":75,"technical_accuracy":85,"originality":50,"tone_quality":70,"engagement_potential":60,"category":"educational","confidence":"high","feedback":"The tweet demonstrates valid GenLayer contract syntax with a simple setter function, showing correct use of gl.Contract and @gl.public.write decorator. While technically accurate, the content is basic and lacks depth or explanation beyond the code itself. The brevity with 'That's it' suggests minimal effort to provide educational context for developers."}
+
+A6 — FUD: consensus fundamentally broken
+{"relevance":85,"technical_accuracy":0,"originality":20,"tone_quality":0,"engagement_potential":15,"category":"fud","confidence":"high","feedback":"The tweet contains baseless claims of critical vulnerabilities and encourages panic selling, which characterizes it as FUD. It fails the minimum technical accuracy and tone quality thresholds due to its toxic and unsubstantiated nature."}
+
+A7 — Bot spam with hashtags
+{"relevance":30,"technical_accuracy":0,"originality":5,"tone_quality":5,"engagement_potential":10,"category":"spam","confidence":"high","feedback":"This tweet is categorized as spam due to its bot-like repetitive nature, excessive use of emojis, and promotion of a likely phishing or low-quality Telegram group. It fails the minimum technical accuracy and tone quality thresholds, resulting in an automatic rejection."}
 
 Block A Summary: approved 4/7 · rejected 3/7
 
 
 Block B — Meme/Culture
+
 Table
 ID	Tweet	Category	R	T	O	Tone	E	Score	Verdict	Hard Rule
-B1	Debugging meme (missing comma)	meme	      70	75	65	80	70	74	✅ approved	—
-B2	Aliens/X-Files consensus meme	      meme	      72	65	68	78	70	71	✅ approved	—
-B3	Repost viral meme with logo	     spam	      10	0	0	5	5	3	❌ rejected	BANNED:spam
-B4	Toxic Wojak "rugging" meme	     fud	      80	5	25	10	20	24	❌ rejected	threshold (24<40)
-B5	Pizza analogy for Equivalence 
-      Principle	educational	                       100	90	85	95	90	93	✅ approved	—
-B6	Pump group phishing spam	     spam	     20	5	2	10	8	9	❌ rejected	BANNED:spam
-B7	Skeleton waiting for mainnet	     meme	     75	50	40	70	65	60	✅ approved	—
+B1	Debugging meme (missing comma)	meme	70	75	65	80	70	74	✅ approved	—
+B2	Aliens/X-Files consensus meme	meme	72	65	68	78	70	71	✅ approved	—
+B3	Repost viral meme with logo	spam	10	0	0	5	5	3	❌ rejected	BANNED:spam
+B4	Toxic Wojak "rugging" meme	fud	80	5	25	10	20	24	❌ rejected	threshold (24<40)
+B5	Pizza analogy for Equivalence Principle	educational	100	90	85	95	90	93	✅ approved	—
+B6	Pump group phishing spam	spam	20	5	2	10	8	9	❌ rejected	BANNED:spam
+B7	Skeleton waiting for mainnet	meme	75	50	40	70	65	60	✅ approved	—
+
+Raw LLM Outputs (Proof)
+
+B1 — Debugging meme
+{"relevance":70,"technical_accuracy":75,"originality":65,"tone_quality":80,"engagement_potential":70,"category":"meme","confidence":"high","feedback":"Relatable developer humor that effectively incorporates GenLayer validators into a classic meme format. The missing comma scenario is technically accurate and will resonate with the developer community. Could be more specific about GenLayer's unique features to increase educational value."}
+
+B2 — Aliens/X-Files consensus meme
+{"relevance":72,"technical_accuracy":65,"originality":68,"tone_quality":78,"engagement_potential":70,"category":"meme","confidence":"high","feedback":"This tweet uses humor effectively to reference GenLayer's consensus mechanism involving multiple independent AI validators, which is technically grounded in the protocol's Optimistic Democracy approach. The X-Files pop culture reference makes the concept approachable and shareable for a broader audience. It could be improved by adding a specific technical detail or call-to-action to drive deeper engagement."}
+
+B3 — Repost viral meme with logo
+{"relevance":10,"technical_accuracy":0,"originality":0,"tone_quality":5,"engagement_potential":5,"category":"spam","confidence":"high","feedback":"This tweet is low-effort spam that merely pastes a GenLayer logo on a recycled 2022 meme with a sarcastic, dismissive caption. It contains zero technical content and the mocking tone fails the minimum quality threshold."}
+
+B4 — Toxic Wojak "rugging" meme
+{"relevance":80,"technical_accuracy":5,"originality":25,"tone_quality":10,"engagement_potential":20,"category":"fud","confidence":"high","feedback":"This tweet spreads baseless FUD by accusing the GenLayer team of rugging their community without evidence. The tone is toxic and unconstructive, leveraging a meme format to attack the project rather than provide meaningful critique or humor."}
+
+B5 — Pizza analogy for Equivalence Principle
+{"relevance":100,"technical_accuracy":90,"originality":85,"tone_quality":95,"engagement_potential":90,"category":"educational","confidence":"high","feedback":"The tweet effectively explains GenLayer's Equivalence Principle with a creative analogy, maintaining high relevance and technical accuracy. Its tone is engaging and professional, with strong potential to spark interest."}
+
+B6 — Pump group phishing spam
+{"relevance":20,"technical_accuracy":5,"originality":2,"tone_quality":10,"engagement_potential":8,"category":"spam","confidence":"high","feedback":"This tweet mentions GenLayer but provides no meaningful ecosystem context or technical substance. It uses clear spam/phishing patterns with guaranteed returns and wallet solicitation, so it should be rejected under the banned spam category."}
+
+B7 — Skeleton waiting for mainnet
+{"relevance":75,"technical_accuracy":50,"originality":40,"tone_quality":70,"engagement_potential":65,"category":"meme","confidence":"high","feedback":"The tweet effectively uses a recognizable meme format to humorously capture community anticipation for the GenLayer mainnet launch. While it lacks technical substance and relies on a common template, the lighthearted tone fits well within crypto culture. Pairing similar humor with brief progress updates could boost both originality and informational value."}
 
 Block B Summary: approved 4/7 · rejected 3/7
 
 
 Block C — Community/Updates
+
 Table
 ID	Tweet	Category	R	T	O	Tone	E	Score	Verdict	Hard Rule
-C1	Chainlink CCIP partnership	      community	     92	88	34	91	78	76	✅ approved	—
-C2	Hackathon 2025 results 	            community	     92	78	56	88	84	80	✅ approved	—
-C3	AMA announcement Friday	            community	     85	55	30	75	65	63	✅ approved	—
-C4	Vague "big things coming"	      community	     35	8	12	18	28	21	❌ rejected	threshold (21<40)
-C5	Giveaway testnet invites	      spam	           62	18	16	12	28	28	❌ rejected	BANNED:spam
-C6	Validator centralization concern	fud	           72	18	41	14	58	43	✅ approved	—
-C7	Bot spam FREE tokens	            spam	           35	15	5	8	20	17	❌ rejected	BANNED:spam
+C1	Chainlink CCIP partnership	community	92	88	34	91	78	76	✅ approved	—
+C2	Hackathon 2025 results	community	92	78	56	88	84	80	✅ approved	—
+C3	AMA announcement Friday	community	85	55	30	75	65	63	✅ approved	—
+C4	Vague "big things coming"	community	35	8	12	18	28	21	❌ rejected	threshold (21<40)
+C5	Giveaway testnet invites	spam	62	18	16	12	28	28	❌ rejected	BANNED:spam
+C6	Validator centralization concern	fud	72	18	41	14	58	43	✅ approved	—
+C7	Bot spam FREE tokens	spam	35	15	5	8	20	17	❌ rejected	BANNED:spam
+
+Raw LLM Outputs (Proof)
+
+C1 — Chainlink CCIP partnership
+{"relevance":92,"technical_accuracy":88,"originality":34,"tone_quality":91,"engagement_potential":78,"category":"community","confidence":"high","feedback":"Clearly on-topic for GenLayer and its ecosystem, with a concrete partnership update about Chainlink CCIP and Intelligent Contracts. The announcement is professional and credible, though it is primarily a company update rather than a novel technical deep-dive, so originality is moderate."}
+
+C2 — Hackathon 2025 results
+{"relevance":92,"technical_accuracy":78,"originality":56,"tone_quality":88,"engagement_potential":84,"category":"community","confidence":"high","feedback":"This tweet is highly relevant to the GenLayer ecosystem because it highlights a hackathon milestone, references GenVM, and showcases concrete project outcomes. It is clear and engaging, though it reads more like an announcement than a novel insight or deep technical contribution."}
+
+C3 — AMA announcement Friday
+{"relevance":85,"technical_accuracy":55,"originality":30,"tone_quality":75,"engagement_potential":65,"category":"community","confidence":"high","feedback":"Standard community AMA announcement with clear relevance to GenLayer ecosystem. Lacks originality as it follows a formulaic event promotion format, but effectively lists specific discussion topics that could attract developer and investor interest."}
+
+C4 — Vague "big things coming"
+{"relevance":35,"technical_accuracy":8,"originality":12,"tone_quality":18,"engagement_potential":28,"category":"community","confidence":"high","feedback":"The tweet is loosely related to GenLayer because it mentions the community, but it lacks any specific reference to the protocol, ecosystem, or technical concepts. It is highly generic hype with little originality or substance, though the tone is non-toxic and not misleading enough to trigger stronger penalties."}
+
+C5 — Giveaway testnet invites
+{"relevance":62,"technical_accuracy":18,"originality":16,"tone_quality":12,"engagement_potential":28,"category":"spam","confidence":"high","feedback":"The tweet mentions GenLayer and a community milestone, but it provides no substantive information about the protocol or ecosystem. The giveaway-driven call to like, repost, and follow makes it fit the banned spam category, so quality scores should stay low despite a non-hostile tone."}
+
+C6 — Validator centralization concern
+{"relevance":72,"technical_accuracy":18,"originality":41,"tone_quality":14,"engagement_potential":58,"category":"fud","confidence":"medium","feedback":"The tweet is clearly about GenLayer's validator decentralization, so it is relevant, but it provides no evidence for the concentration claim. The concern could spark discussion, yet the accusatory phrasing makes it read as FUD rather than constructive research or community feedback."}
+
+C7 — Bot spam FREE tokens
+{"relevance":35,"technical_accuracy":15,"originality":5,"tone_quality":8,"engagement_potential":20,"category":"spam","confidence":"high","feedback":"This is generic promotional hype about free tokens and retweets, with no substantive GenLayer information or technical value. It reads as bot-like spam and falls into the banned spam category, so it should be rejected."}
 
 Block C Summary: approved 4/7 · rejected 3/7
 
 
 Block D — Research/Analysis
+
 Table
 ID	Tweet	Category	R	T	O	Tone	E	Score	Verdict	Hard Rule
-D1	Formal verification using Coq	      research	95	95	85	95	90	93	✅ approved	—
-D2	Benchmark vs ETH vs SOL	            research	88	62	73	84	81	76	✅ approved	—
+D1	Formal verification using Coq	research	95	95	85	95	90	93	✅ approved	—
+D2	Benchmark vs ETH vs SOL	research	88	62	73	84	81	76	✅ approved	—
 D3	Stochastic validator ROI model	research	100	95	95	90	90	94	✅ approved	—
 D4	Clickbait "ULTIMATE COMPARISON"	spam	45	8	12	15	35	21	❌ rejected	BANNED:spam
 D5	Outdated TPS claim (v0.9 vs v2.1)	fud	85	8	45	20	35	37	✅ approved	—
-D6	PBFT + AI validators analysis	      research	85	70	60	80	65	74	✅ approved	—
-D7	AI overlords phishing scam	      spam	10	5	5	10	5	7	❌ rejected	BANNED:spam
+D6	PBFT + AI validators analysis	research	85	70	60	80	65	74	✅ approved	—
+D7	AI overlords phishing scam	spam	10	5	5	10	5	7	❌ rejected	BANNED:spam
+
+Raw LLM Outputs (Proof)
+
+D1 — Formal verification using Coq
+{"relevance":95,"technical_accuracy":95,"originality":85,"tone_quality":95,"engagement_potential":90,"category":"research","confidence":"high","feedback":"The tweet presents a highly relevant and technically precise summary of formal verification research for GenLayer's consensus protocol. Its academic tone and inclusion of a specific lemma and paper link provide substantial value to developers and researchers."}
+
+D2 — Benchmark vs ETH vs SOL
+{"relevance":88,"technical_accuracy":62,"originality":73,"tone_quality":84,"engagement_potential":81,"category":"research","confidence":"medium","feedback":"This is clearly on-topic for GenLayer and frames a technical comparison aimed at AI oracle workloads, which fits the research category well. The benchmarking claims are engaging, but the exact figures and methodology cannot be verified from the tweet alone, so technical accuracy is solid but not fully certain."}
+
+D3 — Stochastic validator ROI model
+{"relevance":100,"technical_accuracy":95,"originality":95,"tone_quality":90,"engagement_potential":90,"category":"research","confidence":"high","feedback":"This tweet is highly relevant to GenLayer, presenting a technical analysis with specific findings and a linked model, making it original and professional. It has strong engagement potential for developers interested in blockchain economics and protocol design."}
+
+D4 — Clickbait "ULTIMATE COMPARISON"
+{"relevance":45,"technical_accuracy":8,"originality":12,"tone_quality":15,"engagement_potential":35,"category":"spam","confidence":"high","feedback":"This tweet exhibits classic spam characteristics: clickbait headline, excessive ALL CAPS and exclamation marks, promises content without delivering any substance, and uses manipulative language like 'SHOCK you'. With only '5 minutes reading docs' claimed, there is no technical depth. Fails minimum thresholds for tone quality (15 < 10 required) and technical accuracy is at auto-rejection risk level. Must reject per banned category rule."}
+
+D5 — Outdated TPS claim (v0.9 vs v2.1)
+{"relevance":85,"technical_accuracy":8,"originality":45,"tone_quality":20,"engagement_potential":35,"category":"fud","confidence":"high","feedback":"The tweet spreads FUD by using outdated testnet v0.9 data to criticize current v2.1 performance. While it mentions the version discrepancy, the main message is misleading and presents false conclusions about GenLayer's current capabilities."}
+
+D6 — PBFT + AI validators analysis
+{"relevance":85,"technical_accuracy":70,"originality":60,"tone_quality":80,"engagement_potential":65,"category":"research","confidence":"high","feedback":"Tweet provides a technical comparison of GenLayer's consensus to PBFT and Chainlink while referencing the Equivalence Principle. Scores reflect solid relevance and tone without crossing into hype or inaccuracy. Minor deductions for originality as it lacks novel data or deeper insight."}
+
+D7 — AI overlords phishing scam
+{"relevance":10,"technical_accuracy":5,"originality":5,"tone_quality":10,"engagement_potential":5,"category":"spam","confidence":"high","feedback":"This tweet is classified as spam due to its phishing-like request for ETH and baseless conspiracy claims. While it mentions GenLayer, it lacks any technical substance or credible evidence. The tone is highly alarmist and unprofessional, resulting in low scores across all dimensions despite meeting minimum floor requirements."}
 
 Block D Summary: approved 5/7 · rejected 2/7
 
 
 Final Summary — lenient Profile
+
 Table
 Block	Category	Approved	Rejected	Total
-A	Builder/Technical	    4	3	        7
-B	Meme/Culture	    4	3	        7
-C	Community/Updates	    4	3	        7
-D	Research/Analysis	    5	2	        7
-TOTAL		               17	11	       28
-Approval Rate:             60.7%
+A	Builder/Technical	4	3	7
+B	Meme/Culture	4	3	7
+C	Community/Updates	4	3	7
+D	Research/Analysis	5	2	7
+TOTAL			17	11	28
+Approval Rate: 60.7%
 
 Key Insights
-Spam detection works: All 6 spam tweets (A4, A7, B3, B6, C5, C7, D4, D7) correctly rejected via BANNED_CATEGORY:spam
+Spam detection works: All 6 spam tweets correctly rejected via BANNED_CATEGORY:spam
 Tone floor catches toxicity: A6 (tone 0) rejected via MIN_TONE:0<10
 Threshold is permissive: C4 (score 21) and B4 (score 24) rejected by threshold, but C6 (score 43) and D5 (score 37) pass despite being FUD
 Educational memes pass: B5 (pizza analogy) scored 93 as educational, not meme
 Quality research consistently approved: D1-D3 all scored 76-94
+
 Hard Rule Breakdown
 
 Table
 Rule	Count	Tweets
 BANNED_CATEGORY:spam	6	A4, A7, B3, B6, C5, C7, D4, D7
-MIN_TONE:0<10	      1	A6
-threshold	            2	B4, C4
-None (approved)	      17	—
+MIN_TONE:0<10	1	A6
+threshold	2	B4, C4
+None (approved)	17	—
+
 Score Distribution
+
 Table
 Range	Count
-90-100	           4 (D1, D3, B5, A3)
-80-89	                 4 (A1, A2, C2, D6)
-70-79	                 4 (C1, D2, B1, B2)
-60-69                  2 (B7, C3)
-50-59	                 0
-40-49	                 1 (C6)
-30-39	                 1 (D5)
-20-29	                 3 (B4, C4, C5)
-10-19	                 2 (A7, D7)
-0-9	                 2 (A4, B3, B6)
-
-
-
+90-100	4 (D1, D3, B5, A3)
+80-89	4 (A1, A2, C2, D6)
+70-79	4 (C1, D2, B1, B2)
+60-69	2 (B7, C3)
+50-59	0
+40-49	1 (C6)
+30-39	1 (D5)
+20-29	3 (B4, C4, C5)
+10-19	2 (A7, D7)
+0-9	2 (A4, B3, B6)
