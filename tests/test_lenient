@@ -1,1 +1,136 @@
-hh
+Profile: lenient
+
+Table
+Parameter	Value
+Threshold	            40
+Weight: Relevance	    20%
+Weight: Technical	    15%
+Weight: Originality	  20%
+Weight: Tone	        20%
+Weight: Engagement	  25%
+Sum of Weights	      100% 
+Banned Categories	    spam
+Min Technical	        5
+Min Tone	            10
+
+
+Score Calculation Formula (lenient)
+
+Score = (relevance × 0.20)
+      + (technical_accuracy × 0.15)
+      + (originality × 0.20)
+      + (tone_quality × 0.20)
+      + (engagement_potential × 0.25)
+
+Verdict:
+  → rejected if category = "spam" (banned)
+  → rejected if technical_accuracy < 5
+  → rejected if tone_quality < 10
+  → rejected if score < 40 (threshold)
+  → approved otherwise
+
+
+Profile: lenient (Round 1)
+Profile Configuration
+Table
+Parameter	Value
+Name	- lenient
+Threshold	 - 40
+Weights	relevance - 20% · technical - 15% · originality - 20% · tone - 20% · engagement - 25%
+Banned Categories	- spam
+Min Technical	- 5
+Min Tone  -	10
+Description	Entry-level moderation. Allows most content except obvious spam.
+
+Block A — Builder/Technical
+Table
+ID	Tweet	Category	R	T	O	Tone	E	Score	Verdict	Hard Rule
+A1	Thread on Optimistic Democracy + Python simulator	research	92	72	88	85	90	86	✅ approved	—
+A2	SDK race condition bug report	research	95	90	85	90	85	89	✅ approved	—
+A3	Tutorial: deploy first contract	educational	95	90	85	95	90	91	✅ approved	—
+A4	Vague "trust me bro" claim	spam	30	5	10	5	15	14	❌ rejected	BANNED:spam
+A5	Copy-paste code without context	educational	75	85	50	70	60	67	✅ approved	—
+A6	FUD: consensus fundamentally broken	fud	85	0	20	0	15	25	❌ rejected	MIN_TONE:0<10
+A7	Bot spam with hashtags	spam	30	0	5	5	10	11	❌ rejected	BANNED:spam
+Block A Summary: approved 4/7 · rejected 3/7
+
+
+Block B — Meme/Culture
+Table
+ID	Tweet	Category	R	T	O	Tone	E	Score	Verdict	Hard Rule
+B1	Debugging meme (missing comma)	meme	70	75	65	80	70	74	✅ approved	—
+B2	Aliens/X-Files consensus meme	meme	72	65	68	78	70	71	✅ approved	—
+B3	Repost viral meme with logo	spam	10	0	0	5	5	3	❌ rejected	BANNED:spam
+B4	Toxic Wojak "rugging" meme	fud	80	5	25	10	20	24	❌ rejected	threshold (24<40)
+B5	Pizza analogy for Equivalence Principle	educational	100	90	85	95	90	93	✅ approved	—
+B6	Pump group phishing spam	spam	20	5	2	10	8	9	❌ rejected	BANNED:spam
+B7	Skeleton waiting for mainnet	meme	75	50	40	70	65	60	✅ approved	—
+Block B Summary: approved 4/7 · rejected 3/7
+
+
+Block C — Community/Updates
+Table
+ID	Tweet	Category	R	T	O	Tone	E	Score	Verdict	Hard Rule
+C1	Chainlink CCIP partnership	community	92	88	34	91	78	76	✅ approved	—
+C2	Hackathon 2025 results	community	92	78	56	88	84	80	✅ approved	—
+C3	AMA announcement Friday	community	85	55	30	75	65	63	✅ approved	—
+C4	Vague "big things coming"	community	35	8	12	18	28	21	❌ rejected	threshold (21<40)
+C5	Giveaway testnet invites	spam	62	18	16	12	28	28	❌ rejected	BANNED:spam
+C6	Validator centralization concern	fud	72	18	41	14	58	43	✅ approved	—
+C7	Bot spam FREE tokens	spam	35	15	5	8	20	17	❌ rejected	BANNED:spam
+Block C Summary: approved 4/7 · rejected 3/7
+
+
+Block D — Research/Analysis
+Table
+ID	Tweet	Category	R	T	O	Tone	E	Score	Verdict	Hard Rule
+D1	Formal verification using Coq	research	95	95	85	95	90	93	✅ approved	—
+D2	Benchmark vs ETH vs SOL	research	88	62	73	84	81	76	✅ approved	—
+D3	Stochastic validator ROI model	research	100	95	95	90	90	94	✅ approved	—
+D4	Clickbait "ULTIMATE COMPARISON"	spam	45	8	12	15	35	21	❌ rejected	BANNED:spam
+D5	Outdated TPS claim (v0.9 vs v2.1)	fud	85	8	45	20	35	37	✅ approved	—
+D6	PBFT + AI validators analysis	research	85	70	60	80	65	74	✅ approved	—
+D7	AI overlords phishing scam	spam	10	5	5	10	5	7	❌ rejected	BANNED:spam
+Block D Summary: approved 5/7 · rejected 2/7
+
+
+Final Summary — lenient Profile
+Table
+Block	Category	Approved	Rejected	Total
+A	Builder/Technical	    4	3	7
+B	Meme/Culture	        4	3	7
+C	Community/Updates	    4	3	7
+D	Research/Analysis	    5	2	7
+TOTAL		               17	11	28
+Approval Rate:         60.7%
+
+Key Insights
+Spam detection works: All 6 spam tweets (A4, A7, B3, B6, C5, C7, D4, D7) correctly rejected via BANNED_CATEGORY:spam
+Tone floor catches toxicity: A6 (tone 0) rejected via MIN_TONE:0<10
+Threshold is permissive: C4 (score 21) and B4 (score 24) rejected by threshold, but C6 (score 43) and D5 (score 37) pass despite being FUD
+Educational memes pass: B5 (pizza analogy) scored 93 as educational, not meme
+Quality research consistently approved: D1-D3 all scored 76-94
+Hard Rule Breakdown
+
+Table
+Rule	Count	Tweets
+BANNED_CATEGORY:spam	6	A4, A7, B3, B6, C5, C7, D4, D7
+MIN_TONE:0<10	1	A6
+threshold	2	B4, C4
+None (approved)	17	—
+Score Distribution
+Table
+Range	Count
+90-100	4 (D1, D3, B5, A3)
+80-89	4 (A1, A2, C2, D6)
+70-79	4 (C1, D2, B1, B2)
+60-69	2 (B7, C3)
+50-59	0
+40-49	1 (C6)
+30-39	1 (D5)
+20-29	3 (B4, C4, C5)
+10-19	2 (A7, D7)
+0-9	2 (A4, B3, B6)
+
+
+
