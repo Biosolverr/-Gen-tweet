@@ -32,14 +32,19 @@ Verdict:
 
 Profile: lenient (Round 1)
 Profile Configuration
+
 Table
 Parameter	Value
 Name	- lenient
 Threshold	 - 40
-Weights	relevance - 20% · technical - 15% · originality - 20% · tone - 20% · engagement - 25%
+Weight relevance - 20% · 
+technical - 15% · 
+originality - 20% · 
+tone - 20% · engagement - 25%
 Banned Categories	- spam
 Min Technical	- 5
 Min Tone  -	10
+
 Description	Entry-level moderation. Allows most content except obvious spam.
 
 Block A — Builder/Technical
