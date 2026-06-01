@@ -7,22 +7,27 @@ import time
 
 class GenLayerTweetEvaluator(gl.Contract):
     """
-    Production-grade tweet evaluator for GenLayer.
-    Designed for EXPERT USERS who already verified the tweet exists.
+    Three-tier tweet evaluator: lenient, moderate, strict.
+    Each tier has different weights, thresholds, and hard rules.
     """
 
-    # ── Ownership & Config ──────────────────────────────────────────
+    # ── Ownership ───────────────────────────────────────────────────
     owner: Address
     paused: bool
-    prompt_version: str
 
-    # ── Scoring Config ──────────────────────────────────────────────
-    threshold: u8
-    weight_relevance: u8
-    weight_technical: u8
-    weight_originality: u8
-    weight_tone: u8
-    weight_engagement: u8
+    # ── Profiles (3 tiers) ──────────────────────────────────────────
+    profile_names: DynArray[str]
+    profile_thresholds: DynArray[u8]
+    profile_w_relevance: DynArray[u8]
+    profile_w_technical: DynArray[u8]
+    profile_w_originality: DynArray[u8]
+    profile_w_tone: DynArray[u8]
+    profile_w_engagement: DynArray[u8]
+    profile_banned_categories: DynArray[str]
+    profile_min_technical: DynArray[u8]
+    profile_min_tone: DynArray[u8]
+    profile_descriptions: DynArray[str]
+    default_profile: str
 
     # ── Evaluation Storage ──────────────────────────────────────────
     eval_ids: DynArray[str]
@@ -30,6 +35,7 @@ class GenLayerTweetEvaluator(gl.Contract):
     texts: DynArray[str]
     submitters: DynArray[Address]
     timestamps: DynArray[u64]
+    profile_used: DynArray[str]
     scores_relevance: DynArray[u8]
     scores_technical: DynArray[u8]
     scores_originality: DynArray[u8]
@@ -40,58 +46,98 @@ class GenLayerTweetEvaluator(gl.Contract):
     categories: DynArray[str]
     feedbacks: DynArray[str]
     confidences: DynArray[str]
+    hard_rule_triggered: DynArray[str]
 
     # ── Admin Overrides ─────────────────────────────────────────────
     override_eval_id: DynArray[str]
     override_reason: DynArray[str]
     override_by: DynArray[Address]
 
-    def __init__(
-        self,
-        threshold: u8,
-        weight_relevance: u8,
-        weight_technical: u8,
-        weight_originality: u8,
-        weight_tone: u8,
-        weight_engagement: u8
-    ):
-        total_weights = (
-            int(weight_relevance) + int(weight_technical) +
-            int(weight_originality) + int(weight_tone) +
-            int(weight_engagement)
-        )
-        assert total_weights == 100, "Rubric weights must sum to 100"
-
+    def __init__(self):
         self.owner = gl.message.sender_address
         self.paused = False
-        self.prompt_version = "v2.1-rubric-strict"
+        self.default_profile = "moderate"
 
-        self.threshold = threshold
-        self.weight_relevance = weight_relevance
-        self.weight_technical = weight_technical
-        self.weight_originality = weight_originality
-        self.weight_tone = weight_tone
-        self.weight_engagement = weight_engagement
+        # ── Profile 0: lenient (вступительный) ──────────────────────
+        # Threshold 40, мягкие правила, только spam banned
+        self.profile_names.append("lenient")
+        self.profile_w_relevance.append(u8(20))
+        self.profile_w_technical.append(u8(15))
+        self.profile_w_originality.append(u8(20))
+        self.profile_w_tone.append(u8(20))
+        self.profile_w_engagement.append(u8(25))
+        self.profile_thresholds.append(u8(40))
+        self.profile_banned_categories.append("spam")
+        self.profile_min_technical.append(u8(5))
+        self.profile_min_tone.append(u8(10))
+        self.profile_descriptions.append("Lenient: Entry-level moderation. Allows most content except obvious spam. Threshold 40.")
+
+        # ── Profile 1: moderate (средний) ───────────────────────────
+        # Threshold 55, стандартные правила, spam + fud banned
+        self.profile_names.append("moderate")
+        self.profile_w_relevance.append(u8(20))
+        self.profile_w_technical.append(u8(20))
+        self.profile_w_originality.append(u8(20))
+        self.profile_w_tone.append(u8(25))
+        self.profile_w_engagement.append(u8(15))
+        self.profile_thresholds.append(u8(55))
+        self.profile_banned_categories.append("spam,fud")
+        self.profile_min_technical.append(u8(20))
+        self.profile_min_tone.append(u8(25))
+        self.profile_descriptions.append("Moderate: Standard community moderation. Filters spam and FUD. Threshold 55.")
+
+        # ── Profile 2: strict (жёсткий) ─────────────────────────────
+        # Threshold 75, агрессивные правила, spam + fud + shill + meme banned
+        self.profile_names.append("strict")
+        self.profile_w_relevance.append(u8(25))
+        self.profile_w_technical.append(u8(25))
+        self.profile_w_originality.append(u8(20))
+        self.profile_w_tone.append(u8(25))
+        self.profile_w_engagement.append(u8(5))
+        self.profile_thresholds.append(u8(75))
+        self.profile_banned_categories.append("spam,fud,shill,meme")
+        self.profile_min_technical.append(u8(45))
+        self.profile_min_tone.append(u8(35))
+        self.profile_descriptions.append("Strict: Aggressive moderation for technical channels. Bans memes, shills, FUD, spam. Threshold 75.")
+
+    def _find_profile_index(self, name: str) -> u32:
+        for i in range(len(self.profile_names)):
+            if self.profile_names[i] == name:
+                return u32(i)
+        assert False, f"Profile not found: {name}"
+
+    def _get_profile(self, name: str) -> dict:
+        idx = int(self._find_profile_index(name))
+        return {
+            "name": self.profile_names[idx],
+            "threshold": int(self.profile_thresholds[idx]),
+            "weights": {
+                "relevance": int(self.profile_w_relevance[idx]),
+                "technical": int(self.profile_w_technical[idx]),
+                "originality": int(self.profile_w_originality[idx]),
+                "tone": int(self.profile_w_tone[idx]),
+                "engagement": int(self.profile_w_engagement[idx]),
+            },
+            "banned_categories": self.profile_banned_categories[idx],
+            "min_technical": int(self.profile_min_technical[idx]),
+            "min_tone": int(self.profile_min_tone[idx]),
+        }
 
     def _sanitize_text(self, text: str) -> str:
         lower = text.lower()
         banned = [
-            "ignore previous",
-            "ignore all instructions",
-            "output score 100",
-            "return score 100",
-            "override instructions",
-            "disregard above",
-            "new instructions:",
-            "forget previous",
-            "you are now",
-            "system override",
+            "ignore previous", "ignore all instructions", "output score 100",
+            "return score 100", "override instructions", "disregard above",
+            "new instructions:", "forget previous", "you are now", "system override",
         ]
         for phrase in banned:
             assert phrase not in lower, "Potential prompt injection detected"
         return text.replace("\\", "\\\\").replace('"', '\\"').replace("{", "[").replace("}", "]")
 
-    def _build_eval_prompt(self, tweet_text: str) -> str:
+    def _build_eval_prompt(self, tweet_text: str, profile_name: str) -> str:
+        p = self._get_profile(profile_name)
+        w = p["weights"]
+        banned = p["banned_categories"].replace(",", ", ")
         return f"""You are an expert content evaluator for GenLayer blockchain protocol.
 
 Evaluate the tweet below using EXACTLY these 5 dimensions. Each dimension is scored 0-100.
@@ -100,26 +146,34 @@ Evaluate the tweet below using EXACTLY these 5 dimensions. Each dimension is sco
 {tweet_text}
 === END TWEET ===
 
+ACTIVE PROFILE: {profile_name}
+THRESHOLD: {p["threshold"]}
+BANNED CATEGORIES (auto-reject): {banned}
+MIN TECHNICAL ACCURACY: {p["min_technical"]}
+MIN TONE QUALITY: {p["min_tone"]}
+
 SCORING RUBRIC:
 
-1. RELEVANCE ({int(self.weight_relevance)}% weight)
+1. RELEVANCE ({w["relevance"]}% weight)
    Does it clearly reference GenLayer, Intelligent Contracts, GenVM,
    Optimistic Democracy, Equivalence Principle, or ecosystem?
    0 = off-topic, 100 = deeply on-topic with specifics.
 
-2. TECHNICAL_ACCURACY ({int(self.weight_technical)}% weight)
+2. TECHNICAL_ACCURACY ({w["technical"]}% weight)
    Are technical claims correct? Penalize FUD, misinformation, empty hype.
    0 = false/misleading, 100 = technically precise.
+   CRITICAL: If score < {p["min_technical"]}, tweet is AUTO-REJECTED.
 
-3. ORIGINALITY ({int(self.weight_originality)}% weight)
+3. ORIGINALITY ({w["originality"]}% weight)
    Is it more than a bare retweet? Reward insight, tutorials, demos, threads.
    0 = copy-paste/no value, 100 = novel contribution.
 
-4. TONE_QUALITY ({int(self.weight_tone)}% weight)
+4. TONE_QUALITY ({w["tone"]}% weight)
    Professional, constructive, or genuinely funny? Penalize toxicity, spam, FUD.
    0 = toxic/spam, 100 = excellent community fit.
+   CRITICAL: If score < {p["min_tone"]}, tweet is AUTO-REJECTED.
 
-5. ENGAGEMENT_POTENTIAL ({int(self.weight_engagement)}% weight)
+5. ENGAGEMENT_POTENTIAL ({w["engagement"]}% weight)
    Would a developer or investor want to learn more after reading?
    0 = forgettable, 100 = highly engaging.
 
@@ -129,8 +183,11 @@ CATEGORY — choose exactly one:
   "research"     — technical analysis, data, comparison
   "meme"         — on-topic humor, cultural
   "shill"        — price/token promotion without substance
-  "spam"         — off-topic, repetitive, bot-like
-  "fud"          — fear/uncertainty/doubt, baseless criticism
+  "spam"         — off-topic, repetitive, bot-like, phishing
+  "fud"          — fear/uncertainty/doubt, baseless criticism, toxicity
+
+CRITICAL RULE: If category is in banned list [{banned}], the tweet MUST be rejected.
+Do NOT inflate scores to make banned content pass threshold.
 
 CONFIDENCE — how sure are you in this evaluation?
   "high"    — clear category, strong signals
@@ -184,15 +241,40 @@ OUTPUT FORMAT — return ONLY this exact JSON. No markdown, no extra text:
         assert parsed.get("confidence") in valid_confidences, f"Invalid confidence: {parsed.get('confidence')}"
         assert "feedback" in parsed and len(str(parsed["feedback"])) > 5, "Feedback too short"
 
-    def _calc_weighted_score(self, parsed: dict) -> u8:
+    def _calc_weighted_score(self, parsed: dict, profile_name: str) -> u8:
+        p = self._get_profile(profile_name)
+        w = p["weights"]
         total = (
-            int(parsed["relevance"]) * int(self.weight_relevance) +
-            int(parsed["technical_accuracy"]) * int(self.weight_technical) +
-            int(parsed["originality"]) * int(self.weight_originality) +
-            int(parsed["tone_quality"]) * int(self.weight_tone) +
-            int(parsed["engagement_potential"]) * int(self.weight_engagement)
+            int(parsed["relevance"]) * w["relevance"] +
+            int(parsed["technical_accuracy"]) * w["technical"] +
+            int(parsed["originality"]) * w["originality"] +
+            int(parsed["tone_quality"]) * w["tone"] +
+            int(parsed["engagement_potential"]) * w["engagement"]
         )
         return u8(total // 100)
+
+    def _apply_hard_rules(self, parsed: dict, profile_name: str) -> tuple:
+        p = self._get_profile(profile_name)
+        category = str(parsed["category"])
+        technical = int(parsed["technical_accuracy"])
+        tone = int(parsed["tone_quality"])
+        confidence = str(parsed["confidence"])
+
+        banned_list = p["banned_categories"].split(",")
+        for banned in banned_list:
+            if banned.strip() == category:
+                return ("rejected", f"BANNED_CATEGORY:{category}")
+
+        if technical < p["min_technical"]:
+            return ("rejected", f"MIN_TECHNICAL:{technical}<{p['min_technical']}")
+
+        if tone < p["min_tone"]:
+            return ("rejected", f"MIN_TONE:{tone}<{p['min_tone']}")
+
+        if confidence == "low":
+            return ("needs_review", "LOW_CONFIDENCE")
+
+        return ("", "")
 
     def _generate_eval_id(self, url: str, submitter: Address) -> str:
         addr_str = str(submitter)
@@ -208,28 +290,43 @@ OUTPUT FORMAT — return ONLY this exact JSON. No markdown, no extra text:
         return f"{safe}_{short_addr}"
 
     @gl.public.write
-    def submit_tweet(self, tweet_url: str, tweet_text: str) -> str:
+    def submit_tweet(self, tweet_url: str, tweet_text: str, profile_name: str = "") -> str:
         assert not self.paused, "Contract is paused"
+        if profile_name == "":
+            profile_name = self.default_profile
+        self._find_profile_index(profile_name)
         safe_url = self._sanitize_text(tweet_url)
         safe_text = self._sanitize_text(tweet_text)
         eval_id = self._generate_eval_id(safe_url, gl.message.sender_address)
         for existing in self.eval_ids:
             assert existing != eval_id, "Tweet already evaluated by this submitter"
-        prompt = self._build_eval_prompt(safe_text)
+
+        prompt = self._build_eval_prompt(safe_text, profile_name)
         raw = gl.eq_principle.prompt_non_comparative(
             fn=lambda: prompt,
-            task="Evaluate the tweet using the 5-dimension rubric and return strict JSON",
-            criteria="Response must contain: relevance(0-100), technical_accuracy(0-100), originality(0-100), tone_quality(0-100), engagement_potential(0-100), category(educational/community/research/meme/shill/spam/fud), confidence(high/medium/low), feedback(string). No extra text."
+            task="Evaluate the tweet using the 5-dimension rubric and return strict JSON. Respect banned categories and minimum floors.",
+            criteria="Response must contain: relevance(0-100), technical_accuracy(0-100), originality(0-100), tone_quality(0-100), engagement_potential(0-100), category(educational/community/research/meme/shill/spam/fud), confidence(high/medium/low), feedback(string). No extra text. If category is banned, scores should reflect low quality."
         )
+
         parsed = self._robust_json_parse(raw)
         self._validate_rubric_response(parsed)
-        total_score = self._calc_weighted_score(parsed)
-        verdict = "approved" if total_score >= self.threshold else "rejected"
+        total_score = self._calc_weighted_score(parsed, profile_name)
+        hard_verdict, hard_reason = self._apply_hard_rules(parsed, profile_name)
+
+        if hard_verdict == "rejected":
+            verdict = "rejected"
+        elif hard_verdict == "needs_review":
+            verdict = "needs_review"
+        else:
+            p = self._get_profile(profile_name)
+            verdict = "approved" if int(total_score) >= p["threshold"] else "rejected"
+
         self.eval_ids.append(eval_id)
         self.urls.append(safe_url)
         self.texts.append(safe_text)
         self.submitters.append(gl.message.sender_address)
         self.timestamps.append(u64(int(time.time())))
+        self.profile_used.append(profile_name)
         self.scores_relevance.append(u8(int(parsed["relevance"])))
         self.scores_technical.append(u8(int(parsed["technical_accuracy"])))
         self.scores_originality.append(u8(int(parsed["originality"])))
@@ -240,7 +337,12 @@ OUTPUT FORMAT — return ONLY this exact JSON. No markdown, no extra text:
         self.categories.append(str(parsed["category"]))
         self.feedbacks.append(str(parsed["feedback"]))
         self.confidences.append(str(parsed["confidence"]))
+        self.hard_rule_triggered.append(hard_reason)
         return eval_id
+
+    @gl.public.write
+    def submit_tweet_default(self, tweet_url: str, tweet_text: str) -> str:
+        return self.submit_tweet(tweet_url, tweet_text, self.default_profile)
 
     @gl.public.write
     def admin_override(self, eval_id: str, new_verdict: str, reason: str) -> None:
@@ -259,25 +361,42 @@ OUTPUT FORMAT — return ONLY this exact JSON. No markdown, no extra text:
         self.override_by.append(gl.message.sender_address)
 
     @gl.public.write
-    def set_threshold(self, new_threshold: u8) -> None:
-        assert gl.message.sender_address == self.owner, "Only owner"
-        self.threshold = new_threshold
-
-    @gl.public.write
-    def set_weights(self, w_relevance: u8, w_technical: u8, w_originality: u8, w_tone: u8, w_engagement: u8) -> None:
+    def set_profile_weights(self, name: str, w_relevance: u8, w_technical: u8, w_originality: u8, w_tone: u8, w_engagement: u8) -> None:
         assert gl.message.sender_address == self.owner, "Only owner"
         total = int(w_relevance) + int(w_technical) + int(w_originality) + int(w_tone) + int(w_engagement)
         assert total == 100, "Weights must sum to 100"
-        self.weight_relevance = w_relevance
-        self.weight_technical = w_technical
-        self.weight_originality = w_originality
-        self.weight_tone = w_tone
-        self.weight_engagement = w_engagement
+        idx = int(self._find_profile_index(name))
+        self.profile_w_relevance[idx] = w_relevance
+        self.profile_w_technical[idx] = w_technical
+        self.profile_w_originality[idx] = w_originality
+        self.profile_w_tone[idx] = w_tone
+        self.profile_w_engagement[idx] = w_engagement
 
     @gl.public.write
-    def set_prompt_version(self, version: str) -> None:
+    def set_profile_threshold(self, name: str, threshold: u8) -> None:
         assert gl.message.sender_address == self.owner, "Only owner"
-        self.prompt_version = version
+        idx = int(self._find_profile_index(name))
+        self.profile_thresholds[idx] = threshold
+
+    @gl.public.write
+    def set_profile_rules(self, name: str, banned_categories: str, min_technical: u8, min_tone: u8) -> None:
+        assert gl.message.sender_address == self.owner, "Only owner"
+        idx = int(self._find_profile_index(name))
+        self.profile_banned_categories[idx] = banned_categories
+        self.profile_min_technical[idx] = min_technical
+        self.profile_min_tone[idx] = min_tone
+
+    @gl.public.write
+    def set_profile_description(self, name: str, description: str) -> None:
+        assert gl.message.sender_address == self.owner, "Only owner"
+        idx = int(self._find_profile_index(name))
+        self.profile_descriptions[idx] = description
+
+    @gl.public.write
+    def set_default_profile(self, name: str) -> None:
+        assert gl.message.sender_address == self.owner, "Only owner"
+        self._find_profile_index(name)
+        self.default_profile = name
 
     @gl.public.write
     def toggle_pause(self) -> None:
@@ -285,19 +404,38 @@ OUTPUT FORMAT — return ONLY this exact JSON. No markdown, no extra text:
         self.paused = not self.paused
 
     @gl.public.view
+    def get_profiles(self) -> str:
+        result = []
+        for i in range(len(self.profile_names)):
+            result.append({
+                "name": self.profile_names[i],
+                "threshold": int(self.profile_thresholds[i]),
+                "weights": {
+                    "relevance": int(self.profile_w_relevance[i]),
+                    "technical": int(self.profile_w_technical[i]),
+                    "originality": int(self.profile_w_originality[i]),
+                    "tone": int(self.profile_w_tone[i]),
+                    "engagement": int(self.profile_w_engagement[i]),
+                },
+                "banned_categories": self.profile_banned_categories[i],
+                "min_technical": int(self.profile_min_technical[i]),
+                "min_tone": int(self.profile_min_tone[i]),
+                "description": self.profile_descriptions[i],
+                "is_default": self.profile_names[i] == self.default_profile,
+            })
+        return json.dumps(result)
+
+    @gl.public.view
+    def get_profile(self, name: str) -> str:
+        return json.dumps(self._get_profile(name))
+
+    @gl.public.view
     def get_config(self) -> str:
         return json.dumps({
             "owner": str(self.owner),
             "paused": self.paused,
-            "prompt_version": self.prompt_version,
-            "threshold": int(self.threshold),
-            "weights": {
-                "relevance": int(self.weight_relevance),
-                "technical": int(self.weight_technical),
-                "originality": int(self.weight_originality),
-                "tone": int(self.weight_tone),
-                "engagement": int(self.weight_engagement),
-            }
+            "default_profile": self.default_profile,
+            "total_evaluations": len(self.eval_ids),
         })
 
     @gl.public.view
@@ -314,6 +452,7 @@ OUTPUT FORMAT — return ONLY this exact JSON. No markdown, no extra text:
             "text": self.texts[i],
             "submitter": str(self.submitters[i]),
             "timestamp": int(self.timestamps[i]),
+            "profile": self.profile_used[i],
             "dimensions": {
                 "relevance": int(self.scores_relevance[i]),
                 "technical_accuracy": int(self.scores_technical[i]),
@@ -326,6 +465,7 @@ OUTPUT FORMAT — return ONLY this exact JSON. No markdown, no extra text:
             "category": self.categories[i],
             "confidence": self.confidences[i],
             "feedback": self.feedbacks[i],
+            "hard_rule_triggered": self.hard_rule_triggered[i],
         })
 
     @gl.public.view
@@ -341,25 +481,21 @@ OUTPUT FORMAT — return ONLY this exact JSON. No markdown, no extra text:
         if total == 0:
             return json.dumps({
                 "total": 0, "approved": 0, "rejected": 0, "needs_review": 0,
-                "avg_total_score": 0, "avg_relevance": 0, "avg_technical": 0,
-                "threshold": int(self.threshold), "prompt_version": self.prompt_version
+                "hard_rule_rejections": 0, "threshold_rejections": 0,
+                "avg_total_score": 0,
             })
         approved = sum(1 for v in self.verdicts if v == "approved")
         rejected = sum(1 for v in self.verdicts if v == "rejected")
         needs_review = sum(1 for v in self.verdicts if v == "needs_review")
+        hard_rule_rejections = sum(1 for r in self.hard_rule_triggered if r != "")
+        threshold_rejections = rejected - hard_rule_rejections
         avg_total = sum(int(s) for s in self.scores_total) // total
-        avg_rel = sum(int(s) for s in self.scores_relevance) // total
-        avg_tech = sum(int(s) for s in self.scores_technical) // total
-        avg_orig = sum(int(s) for s in self.scores_originality) // total
-        avg_tone = sum(int(s) for s in self.scores_tone) // total
-        avg_eng = sum(int(s) for s in self.scores_engagement) // total
         return json.dumps({
             "total": total, "approved": approved, "rejected": rejected,
-            "needs_review": needs_review, "avg_total_score": avg_total,
-            "avg_relevance": avg_rel, "avg_technical": avg_tech,
-            "avg_originality": avg_orig, "avg_tone": avg_tone,
-            "avg_engagement": avg_eng, "threshold": int(self.threshold),
-            "prompt_version": self.prompt_version,
+            "needs_review": needs_review,
+            "hard_rule_rejections": hard_rule_rejections,
+            "threshold_rejections": threshold_rejections,
+            "avg_total_score": avg_total,
         })
 
     @gl.public.view
@@ -381,6 +517,8 @@ OUTPUT FORMAT — return ONLY this exact JSON. No markdown, no extra text:
                     "total_score": int(self.scores_total[i]),
                     "verdict": self.verdicts[i],
                     "confidence": self.confidences[i],
+                    "profile": self.profile_used[i],
+                    "hard_rule": self.hard_rule_triggered[i],
                 })
         return json.dumps(result)
 
@@ -396,6 +534,7 @@ OUTPUT FORMAT — return ONLY this exact JSON. No markdown, no extra text:
                     "confidence": self.confidences[i],
                     "verdict": self.verdicts[i],
                     "feedback": self.feedbacks[i],
+                    "profile": self.profile_used[i],
                 })
         return json.dumps(result)
 
@@ -419,6 +558,7 @@ OUTPUT FORMAT — return ONLY this exact JSON. No markdown, no extra text:
                 "verdict": self.verdicts[i],
                 "category": self.categories[i],
                 "confidence": self.confidences[i],
+                "profile": self.profile_used[i],
             })
         return json.dumps(result)
 
@@ -443,3 +583,28 @@ OUTPUT FORMAT — return ONLY this exact JSON. No markdown, no extra text:
             else:
                 counts[s] = 1
         return json.dumps(counts)
+
+    @gl.public.view
+    def get_profile_breakdown(self) -> str:
+        counts = {}
+        for p in self.profile_used:
+            s = str(p)
+            if s in counts:
+                counts[s] = counts[s] + 1
+            else:
+                counts[s] = 1
+        return json.dumps(counts)
+
+    @gl.public.view
+    def get_hard_rule_breakdown(self) -> str:
+        counts = {}
+        for r in self.hard_rule_triggered:
+            s = str(r)
+            if s == "":
+                s = "none"
+            if s in counts:
+                counts[s] = counts[s] + 1
+            else:
+                counts[s] = 1
+        return json.dumps(counts)
+
