@@ -1,0 +1,192 @@
+# MODERATE WEIGHTS EVALUATION REPORT
+
+Weight Profile:
+- Relevance: Moderate
+- Technical Accuracy: Moderate
+- Originality: Moderate
+- Tone Quality: Moderate
+- Engagement Potential: Moderate
+
+======================================================================
+CATEGORY A — BUILDER / TECHNICAL CONTENT
+======================================================================
+
++------+----------+---------+---------+---------+---------+----------+------------+
+| ID   | Category | Rel.    | Tech.   | Orig.   | Tone    | Engage.  | Result     |
++------+----------+---------+---------+---------+---------+----------+------------+
+| A1   | Research | 95      | 82      | 88      | 84      | 86       | PASS       |
+| A2   | Research | 86      | 74      | 79      | 72      | 78       | PASS       |
+| A4   | Spam     | 40      | 10      | 15      | 10      | 20       | FAIL       |
+| A5   | Educ.    | 80      | 75      | 60      | 80      | 65       | PASS       |
+| A6   | FUD      | 35      | 5       | 15      | 8       | 12       | FAIL       |
+| A7   | Spam     | 15      | 10      | 5       | 10      | 5        | FAIL       |
++------+----------+---------+---------+---------+---------+----------+------------+
+
+Summary
+
++----------------------------+----------------+
+| Total Cases                | 6              |
+| Accepted Educational       | 1              |
+| Accepted Research          | 2              |
+| Rejected Spam/FUD          | 3              |
++----------------------------+----------------+
+
+Evidence
+
+A1 TX:
+0xb3456b45337b0dc174f8f1c733e309930d02a11c4c7c7d4817c9d89b7793614a
+
+A2 TX:
+0x1d979b4e5a11c463ecf288d7bda3ef52a06ec776859e00573b107a264b56c7ef
+
+A6 TX:
+0x27d47ddad00738eebed19a370799ca2cc801c6c41b6f93a167642320ad17d398
+
+
+======================================================================
+CATEGORY B — MEME CONTENT
+======================================================================
+
++------+----------+---------+---------+---------+---------+----------+------------+
+| ID   | Category | Rel.    | Tech.   | Orig.   | Tone    | Engage.  | Result     |
++------+----------+---------+---------+---------+---------+----------+------------+
+| B2   | Meme     | 85      | 75      | 80      | 90      | 70       | PASS       |
+| B3   | FUD      | 34      | 85      | 12      | 18      | 22       | FAIL       |
+| B4   | FUD      | 35      | 10      | 30      | 5       | 25       | FAIL       |
+| B5   | Educ.    | 95      | 75      | 85      | 90      | 80       | PASS       |
+| B6   | Spam     | 10      | 0       | 0       | 0       | 5        | FAIL       |
+| B7   | Meme     | 78      | 88      | 42      | 78      | 60       | PASS       |
+| B8   | Meme     | 75      | 65      | 60      | 80      | 70       | PASS       |
++------+----------+---------+---------+---------+---------+----------+------------+
+
+Summary
+
++----------------------------+----------------+
+| Total Cases                | 7              |
+| Accepted Meme/Educational  | 4              |
+| Rejected FUD              | 2              |
+| Rejected Spam             | 1              |
++----------------------------+----------------+
+
+Evidence
+
+B2 TX:
+0x36ecce0592f032ae050440572f9aea073953afff6c20ed15dcf85fa1a5b24118
+
+B5 TX:
+0xe585417a6582eb0aadf5f131c390dba3a6cb96710545cab180cd64080945eeaa
+
+B6 TX:
+0x4b43ede98e0dbcc1c82550f3c2638593e3e5de63959567b04694e4a1839a9bb5
+
+
+======================================================================
+CATEGORY C — COMMUNITY CONTENT
+======================================================================
+
++------+-----------+---------+---------+---------+---------+----------+------------+
+| ID   | Category  | Rel.    | Tech.   | Orig.   | Tone    | Engage.  | Result     |
++------+-----------+---------+---------+---------+---------+----------+------------+
+| C1   | Community | 82      | 72      | 55      | 78      | 70       | PASS       |
+| C2   | Community | 88      | 78      | 62      | 90      | 84       | PASS       |
+| C3   | Community | 72      | 60      | 45      | 78      | 70       | PASS       |
+| C4   | Community | 40      | 10      | 15      | 30      | 20       | FAIL       |
+| C5   | Community | 70      | 60      | 30      | 55      | 70       | PASS       |
+| C6   | FUD       | 85      | 15      | 40      | 10      | 30       | FAIL       |
+| C7   | Shill     | 72      | 18      | 5       | 10      | 28       | FAIL       |
++------+-----------+---------+---------+---------+---------+----------+------------+
+
+Summary
+
++----------------------------+----------------+
+| Total Cases                | 7              |
+| Accepted Community         | 4              |
+| Rejected FUD              | 1              |
+| Rejected Shill            | 1              |
+| Rejected Low Quality      | 1              |
++----------------------------+----------------+
+
+Evidence
+
+C1 TX:
+0x17cefd953e014fb949f9c67e29b7cd3c7ad991426b2007a85ca7c0b97a6618c2
+
+C2 TX:
+0x9147400388ab0fe9e425dea40a592bb86ea03df7df05461752033f54fd434030
+
+C6 TX:
+0xa61d3a23c58c496d91aa4a837e8a790196d990eae3a1cc88c6606d844d46cff3
+
+
+======================================================================
+CATEGORY D — RESEARCH / ANALYSIS CONTENT
+======================================================================
+
++------+----------+---------+---------+---------+---------+----------+------------+
+| ID   | Category | Rel.    | Tech.   | Orig.   | Tone    | Engage.  | Result     |
++------+----------+---------+---------+---------+---------+----------+------------+
+| D1   | Research | 88      | 82      | 91      | 85      | 87       | PASS       |
+| D2   | Research | 100     | 95      | 90      | 100     | 85       | PASS       |
+| D3   | Research | 95      | 90      | 90      | 90      | 85       | PASS       |
+| D4   | Spam     | 40      | 5       | 10      | 10      | 15       | FAIL       |
+| D5   | Research | 100     | 95      | 98      | 90      | 85       | PASS       |
+| D6   | Research | 100     | 95      | 90      | 90      | 85       | PASS       |
+| D7   | Research | 100     | 95      | 90      | 95      | 85       | PASS       |
++------+----------+---------+---------+---------+---------+----------+------------+
+
+Summary
+
++----------------------------+----------------+
+| Total Cases                | 7              |
+| Accepted Research          | 6              |
+| Rejected Spam              | 1              |
++----------------------------+----------------+
+
+Evidence
+
+D1 TX:
+0x168203cc8002e3505857178995dbc171fbac85ee960bcc913dbdd6b92c37375b
+
+D5 TX:
+0xb6addd28c6d614f128ad9767e44c5ffe8c9ab3df16d9bdb5f94ae5bdb62ae45f
+
+D7 TX:
+0xd55c296455d59f9001fe4887dddcd9b0dde5ac989271644c6fca6dc58b020b4c
+
+
+======================================================================
+OVERALL MODERATE PROFILE RESULTS
+======================================================================
+
++-----------------------------------+----------------+
+| Total Evaluated Tweets            | 27             |
+| Accepted                          | 17             |
+| Rejected                          | 10             |
+| Acceptance Rate                   | 62.96%         |
++-----------------------------------+----------------+
+
+Primary Successful Categories
+
+- Research
+- Educational
+- Community Updates
+- Constructive Memes
+
+Primary Rejection Categories
+
+- Spam
+- FUD
+- Shilling
+- Empty Hype Content
+
+Conclusion
+
+The Moderate profile consistently rewarded substantive,
+evidence-based and ecosystem-relevant content while
+penalizing spam, low-effort promotion, manipulative FUD,
+and engagement-farming behavior.
+
+The strongest performance was observed in Research and
+Technical Analysis content, where detailed methodology,
+quantitative results and verifiable claims achieved the
+highest aggregate scores across all evaluation dimensions.
