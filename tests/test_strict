@@ -1,0 +1,164 @@
+# STRICT WEIGHTS EVALUATION REPORT
+
+## Weight Profile
+
+| Metric               | Weight       |
+| -------------------- | ------------ |
+| Relevance            | VERY HIGH    |
+| Technical Accuracy   | HIGH         |
+| Originality          | HIGH         |
+| Tone Quality         | MODERATE     |
+| Engagement Potential | LOW PRIORITY |
+
+Strict profile prioritizes protocol relevance above all other metrics. 
+Content may still be rejected despite strong technical quality if it lacks explicit connection to GenLayer concepts.
+
+---
+
+# CATEGORY A — BUILDER / TECHNICAL CONTENT
+
+| ID | Category    | Rel. | Tech. | Orig. | Tone | Engage. | Result |
+| -- | ----------- | ---- | ----- | ----- | ---- | ------- | ------ |
+| A1 | Research    | 88   | 74    | 76    | 82   | 79      | PASS   |
+| A2 | Research    | 20   | 90    | 85    | 90   | 80      | FAIL   |
+| A3 | Educational | 90   | 80    | 70    | 85   | 75      | PASS   |
+| A4 | Research    | 38   | 68    | 72    | 84   | 61      | FAIL   |
+| A5 | Community   | 90   | 75    | 45    | 85   | 65      | PASS   |
+| A6 | Community   | 85   | 90    | 40    | 85   | 70      | PASS   |
+| A7 | Community   | 80   | 70    | 60    | 85   | 90      | PASS   |
+
+### Summary
+
+| Metric          | Value  |
+| --------------- | ------ |
+| Total Cases     | 7      |
+| Accepted        | 5      |
+| Rejected        | 2      |
+| Acceptance Rate | 71.43% |
+
+---
+
+# CATEGORY B — MEME CONTENT
+
+| ID | Category | Rel. | Tech. | Orig. | Tone | Engage. | Result |
+| -- | -------- | ---- | ----- | ----- | ---- | ------- | ------ |
+| B1 | Meme     | 100  | 80    | 70    | 85   | 80      | FAIL   |
+| B2 | Meme     | 20   | 30    | 40    | 40   | 30      | FAIL   |
+| B3 | Meme     | 20   | 50    | 30    | 60   | 35      | FAIL   |
+| B4 | Meme     | 55   | 30    | 35    | 40   | 30      | FAIL   |
+| B5 | Meme     | 20   | 30    | 35    | 40   | 25      | FAIL   |
+| B6 | Meme     | 55   | 50    | 40    | 45   | 35      | FAIL   |
+| B7 | Meme     | 30   | 50    | 62    | 58   | 55      | FAIL   |
+
+### Summary
+
+| Metric          | Value |
+| --------------- | ----- |
+| Total Cases     | 7     |
+| Accepted Memes  | 0     |
+| Rejected Memes  | 7     |
+| Acceptance Rate | 0.00% |
+
+### Observation
+
+Under Strict weights, meme content is effectively treated as non-substantive content regardless of engagement performance.
+
+---
+
+# CATEGORY C — COMMUNITY CONTENT
+
+| ID | Category  | Rel. | Tech. | Orig. | Tone | Engage. | Result |
+| -- | --------- | ---- | ----- | ----- | ---- | ------- | ------ |
+| C1 | Community | 38   | 62    | 28    | 65   | 42      | FAIL   |
+| C2 | Community | 80   | 75    | 60    | 85   | 70      | PASS   |
+| C3 | Community | 35   | 60    | 25    | 65   | 30      | FAIL   |
+| C4 | Community | 35   | 60    | 15    | 75   | 25      | FAIL   |
+| C5 | Community | 85   | 70    | 30    | 80   | 55      | PASS   |
+| C6 | Community | 78   | 88    | 62    | 82   | 58      | PASS   |
+| C7 | Community | 62   | 70    | 45    | 78   | 68      | PASS   |
+
+### Summary
+
+| Metric             | Value  |
+| ------------------ | ------ |
+| Total Cases        | 7      |
+| Accepted Community | 4      |
+| Rejected Community | 3      |
+| Acceptance Rate    | 57.14% |
+
+---
+
+# CATEGORY D — RESEARCH / ANALYSIS CONTENT
+
+| ID | Category | Rel. | Tech. | Orig. | Tone | Engage. | Result |
+| -- | -------- | ---- | ----- | ----- | ---- | ------- | ------ |
+| D1 | Research | 96   | 88    | 84    | 90   | 82      | PASS   |
+| D2 | Research | 85   | 70    | 60    | 80   | 75      | PASS   |
+| D3 | Research | 42   | 68    | 46    | 78   | 40      | FAIL   |
+| D4 | Research | 18   | 58    | 64    | 72   | 41      | FAIL   |
+| D5 | Research | 42   | 78    | 55    | 72   | 48      | FAIL   |
+| D6 | Research | 72   | 78    | 58    | 84   | 66      | PASS   |
+| D7 | Research | 55   | 75    | 40    | 80   | 40      | FAIL   |
+
+### Summary
+
+| Metric            | Value  |
+| ----------------- | ------ |
+| Total Cases       | 7      |
+| Accepted Research | 3      |
+| Rejected Research | 4      |
+| Acceptance Rate   | 42.86% |
+
+---
+
+# OVERALL STRICT PROFILE RESULTS
+
+| Metric                 | Value  |
+| ---------------------- | ------ |
+| Total Evaluated Tweets | 28     |
+| Accepted               | 12     |
+| Rejected               | 16     |
+| Acceptance Rate        | 42.86% |
+
+---
+
+# Primary Successful Categories
+
+| Category                     | Outcome |
+| ---------------------------- | ------- |
+| GenLayer-Specific Research   | Strong  |
+| Educational Builder Content  | Strong  |
+| GenVM Updates                | Strong  |
+| Ecosystem Milestones         | Strong  |
+| Intelligent Contract Content | Strong  |
+
+---
+
+# Primary Rejection Categories
+
+| Category                     | Outcome  |
+| ---------------------------- | -------- |
+| Memes                        | Rejected |
+| Generic Research             | Rejected |
+| Generic Community Updates    | Rejected |
+| Non-GenLayer Technical Posts | Rejected |
+| Broad Blockchain Commentary  | Rejected |
+
+---
+
+# Conclusion
+
+The Strict profile behaves much closer to a protocol reviewer than a social-media evaluator.
+
+The strongest predictor of acceptance is not technical quality alone, but explicit and direct relevance to GenLayer. 
+Posts discussing Intelligent Contracts, GenVM, Optimistic Democracy, validators, Equivalence Principle, deployment metrics, 
+or protocol-specific research consistently outperform otherwise strong but generic technical content.
+
+Research remains the highest-performing category, but only when clearly tied to measurable GenLayer properties. 
+Generic blockchain or AI research is frequently rejected despite respectable technical scores.
+
+The most significant finding is the complete elimination of meme content. Even memes receiving strong relevance, tone, 
+and engagement scores were rejected because the profile prioritizes substantive informational value over entertainment.
+
+Overall, the Strict profile heavily rewards protocol-focused, educational, and research-driven 
+content while aggressively filtering generic discussion, humor, promotion, and ecosystem-adjacent material.
