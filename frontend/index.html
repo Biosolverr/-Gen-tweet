@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>GenLayer TweetEvaluator v3</title>
+<title>GenLayer TweetEvaluator v3 — Studio</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
@@ -11,89 +11,112 @@
   --bg:#09090f;--s1:#0d0d16;--s2:#11111c;--s3:#161625;--border:#1f1f30;
   --acc:#7c3aed;--acc2:#a78bfa;--accg:rgba(124,58,237,.12);
   --t1:#e8e8f0;--t2:#9494a8;--t3:#52526a;
-  --green:#10b981;--red:#ef4444;--amber:#f59e0b;
+  --green:#10b981;--red:#ef4444;--amber:#f59e0b;--blue:#60a5fa;
 }
 html,body{background:var(--bg);color:var(--t1);font-family:'DM Sans',sans-serif;min-height:100vh;font-size:13px}
-::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--s1)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:var(--s1)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+/* ── SHELL ── */
 .shell{display:flex;height:100vh;overflow:hidden}
 .sidebar{width:220px;flex-shrink:0;background:var(--s1);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden}
-.topbar{height:52px;flex-shrink:0;background:var(--s1);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:10px;flex-wrap:nowrap}
-.body{flex:1;overflow-y:auto}
-.right-pane{padding:20px;max-width:900px}
+.topbar{height:48px;flex-shrink:0;background:var(--s1);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 18px;gap:12px}
+.body{flex:1;overflow-y:auto;display:flex;min-height:0}
+.left-pane{width:280px;flex-shrink:0;border-right:1px solid var(--border);overflow-y:auto;display:flex;flex-direction:column}
+.right-pane{flex:1;overflow-y:auto;padding:20px}
 
-/* sidebar */
-.sb-logo{padding:14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:9px}
+/* ── SIDEBAR ── */
+.sb-logo{padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:9px}
 .sb-hex{width:22px;height:22px;flex-shrink:0}
 .sb-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:#c4b5fd}
 .sb-sub{font-size:9.5px;color:var(--t3);font-family:'JetBrains Mono',monospace;margin-top:2px}
 .sb-section{padding:10px 10px 4px;font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.1em}
-.sb-item{display:flex;align-items:center;gap:7px;padding:7px 12px;cursor:pointer;color:var(--t2);border-left:2px solid transparent;font-size:12px;background:none;border-top:none;border-bottom:none;border-right:none;width:100%;text-align:left;transition:all .1s}
+.sb-item{display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;color:var(--t2);border-left:2px solid transparent;transition:all .12s;font-size:12px;background:none;border-top:none;border-bottom:none;border-right:none;width:100%;text-align:left}
 .sb-item:hover{color:var(--t1);background:var(--accg)}
 .sb-item.active{color:var(--acc2);border-left-color:var(--acc);background:var(--accg)}
-.sb-tag{display:inline-block;padding:1px 5px;border-radius:3px;font-size:9px;font-weight:600;flex-shrink:0}
-.sb-tag.w{background:rgba(239,68,68,.15);color:#f87171}
-.sb-tag.r{background:rgba(96,165,250,.12);color:#60a5fa}
-.sb-foot{margin-top:auto;padding:10px;border-top:1px solid var(--border)}
-.dot{width:6px;height:6px;border-radius:50%;display:inline-block;margin-right:4px;flex-shrink:0}
-.dot-live{background:var(--green);animation:pulse 2s infinite}
-.dot-pend{background:var(--amber);animation:pulse .8s infinite}
-.dot-err{background:var(--red)}
+.sb-item .badge-count{margin-left:auto;background:var(--s3);color:var(--t3);font-size:9px;font-family:'JetBrains Mono',monospace;padding:1px 5px;border-radius:3px}
+.sb-tag{display:inline-block;padding:1px 6px;border-radius:3px;font-size:9px;font-weight:600}
+.sb-tag.write{background:rgba(239,68,68,.15);color:#f87171}
+.sb-tag.read{background:rgba(96,165,250,.12);color:#60a5fa}
+.sb-foot{margin-top:auto;padding:12px;border-top:1px solid var(--border)}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block;animation:pulse 2s infinite;margin-right:5px}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 
-/* topbar */
-.tb-mono{font-family:'JetBrains Mono',monospace;font-size:11px}
-.tb-addr{color:var(--acc2);background:var(--accg);border:1px solid rgba(124,58,237,.25);padding:3px 8px;border-radius:5px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:11px}
-.tb-sep{color:var(--border)}
-.net-badge{display:flex;align-items:center;gap:5px;font-size:10.5px;padding:3px 9px;border-radius:5px;margin-left:auto;white-space:nowrap}
-.nb-live{color:var(--green);background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.2)}
-.nb-err{color:var(--red);background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2)}
-.nb-pend{color:var(--amber);background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2)}
-.fi{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:12px;color:var(--t1);font-family:'DM Sans',sans-serif;outline:none;width:100%;transition:border-color .12s}
-.fi:focus{border-color:rgba(124,58,237,.5)}
-.fi::placeholder{color:var(--t3)}
+/* ── TOPBAR ── */
+.tb-contract{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--t3)}
+.tb-addr{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--acc2);background:var(--accg);border:1px solid rgba(124,58,237,.25);padding:3px 8px;border-radius:5px}
+.tb-sep{color:var(--border);font-size:16px}
+.tb-btn{padding:5px 12px;border-radius:6px;font-size:11.5px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--s2);color:var(--t2);font-family:'DM Sans',sans-serif;transition:all .12s}
+.tb-btn:hover{color:var(--t1);border-color:var(--t3)}
+.tb-btn.primary{background:var(--acc);color:#fff;border-color:var(--acc)}
+.tb-btn.primary:hover{background:#6d28d9}
+.state-badge{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--green);background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.2);padding:3px 8px;border-radius:5px;margin-left:auto}
+
+/* ── METHOD PANEL ── */
+.method-group{padding:12px}
+.method-group-title{font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.method-card{border-radius:8px;border:1px solid var(--border);background:var(--s2);margin-bottom:6px;overflow:hidden;cursor:pointer;transition:border-color .12s}
+.method-card:hover{border-color:var(--acc)40}
+.method-card.active{border-color:var(--acc);background:var(--s3)}
+.method-header{display:flex;align-items:center;gap:8px;padding:9px 12px}
+.method-name{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:500;flex:1}
+.method-type{font-size:9px;font-weight:600;padding:1px 5px;border-radius:3px}
+.mt-read{background:rgba(96,165,250,.12);color:#60a5fa}
+.mt-write{background:rgba(239,68,68,.12);color:#f87171}
+
+/* ── RIGHT PANE ── */
+.pane-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--t1);margin-bottom:4px}
+.pane-sub{font-size:11.5px;color:var(--t3);margin-bottom:18px}
+.section-card{background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px}
+.sc-title{font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:12px}
+
+/* ── FORM ── */
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.field:last-child{margin-bottom:0}
+.field label{font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em}
+input.fi,textarea.fi,select.fi{background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:8px 11px;font-size:12.5px;color:var(--t1);font-family:'DM Sans',sans-serif;outline:none;width:100%;transition:border-color .12s}
+input.fi:focus,textarea.fi:focus,select.fi:focus{border-color:rgba(124,58,237,.5)}
+input.fi::placeholder,textarea.fi::placeholder{color:var(--t3)}
 textarea.fi{resize:vertical;line-height:1.6;min-height:90px}
 select.fi{cursor:pointer}
-
-/* layout */
-.pane-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:3px}
-.pane-sub{font-size:11.5px;color:var(--t3);margin-bottom:16px}
-.card{background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:12px}
-.card-title{font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px}
-.field{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
-.field:last-child{margin-bottom:0}
-.field label{font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.05em}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:7px 15px;border-radius:7px;font-size:12.5px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .12s;border:1px solid transparent}
-.btn-p{background:var(--acc);color:#fff;border-color:var(--acc)}.btn-p:hover{background:#6d28d9}
-.btn-d{background:rgba(239,68,68,.12);color:#f87171;border-color:rgba(239,68,68,.25)}.btn-d:hover{background:rgba(239,68,68,.2)}
-.btn-s{background:var(--s3);color:var(--t2);border-color:var(--border)}.btn-s:hover{color:var(--t1)}
-.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 16px;border-radius:7px;font-size:12.5px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .12s;border:1px solid transparent}
+.btn-primary{background:var(--acc);color:#fff;border-color:var(--acc)}
+.btn-primary:hover{background:#6d28d9}
+.btn-danger{background:rgba(239,68,68,.12);color:#f87171;border-color:rgba(239,68,68,.25)}
+.btn-danger:hover{background:rgba(239,68,68,.2)}
+.btn-sec{background:var(--s3);color:var(--t2);border-color:var(--border)}
+.btn-sec:hover{color:var(--t1)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
 .btn-full{width:100%}
-.spinner{width:12px;height:12px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .55s linear infinite}
+.spinner{width:13px;height:13px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-.stat{background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:11px}
-.stat-lbl{font-size:9.5px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em}
-.stat-val{font-family:'Syne',sans-serif;font-size:22px;font-weight:700;margin-top:3px;line-height:1}
-.stat-sub{font-size:10px;color:var(--t3);margin-top:2px}
-.mono{font-family:'JetBrains Mono',monospace}
-.out-box{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;font-family:'JetBrains Mono',monospace;font-size:11.5px;line-height:1.7;color:var(--t2);white-space:pre-wrap;word-break:break-all;max-height:380px;overflow-y:auto}
-.out-label{font-size:9.5px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;display:flex;justify-content:space-between}
-.copy-btn{cursor:pointer;color:var(--t3);font-size:10px;background:none;border:none;font-family:'JetBrains Mono',monospace}.copy-btn:hover{color:var(--acc2)}
-/* verdict */
-.verdict-box{display:flex;align-items:flex-start;gap:12px;padding:13px;border-radius:8px;border:1px solid;margin-bottom:10px}
-.vb-ok{background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.3)}
-.vb-no{background:rgba(239,68,68,.07);border-color:rgba(239,68,68,.25)}
-.v-score{font-family:'Syne',sans-serif;font-size:38px;font-weight:800;line-height:1}
-.v-badge{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:600;padding:3px 8px;border-radius:4px}
-.vb-appr{background:#052e16;color:#4ade80;border:1px solid #166534}
-.vb-rejt{background:#300505;color:#f87171;border:1px solid #7f1d1d}
-.dim-row{margin-bottom:8px}
-.dim-top{display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;color:var(--t2)}
-.dim-track{height:4px;background:var(--border);border-radius:2px;overflow:hidden}
-.dim-fill{height:100%;border-radius:2px}
-.badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:4px;font-size:10px;font-family:'JetBrains Mono',monospace;font-weight:500}
+
+/* ── OUTPUT ── */
+.output-box{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;font-family:'JetBrains Mono',monospace;font-size:11.5px;line-height:1.7;color:var(--t2);white-space:pre-wrap;word-break:break-all;max-height:420px;overflow-y:auto}
+.output-empty{color:var(--t3);font-style:italic}
+.output-label{font-size:9.5px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between}
+.copy-btn{cursor:pointer;color:var(--t3);font-size:10px;background:none;border:none;font-family:'JetBrains Mono',monospace;padding:0}
+.copy-btn:hover{color:var(--acc2)}
+
+/* ── RESULT ── */
+.result-verdict{display:flex;align-items:flex-start;gap:14px;padding:14px;border-radius:8px;border:1px solid;margin-bottom:12px}
+.rv-approved{background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.3)}
+.rv-rejected{background:rgba(239,68,68,.07);border-color:rgba(239,68,68,.25)}
+.rv-score{font-family:'Syne',sans-serif;font-size:40px;font-weight:800;line-height:1}
+.rv-badge{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:600;padding:3px 9px;border-radius:4px}
+.vb-approved{background:#052e16;color:#4ade80;border:1px solid #166534}
+.vb-rejected{background:#300505;color:#f87171;border:1px solid #7f1d1d}
+.dim-bar-row{margin-bottom:9px}
+.dim-bar-top{display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px}
+.dim-bar-lbl{color:var(--t2)}
+.dim-bar-track{height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+.dim-bar-fill{height:100%;border-radius:2px;transition:width .5s}
+.hard-rule{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);border-radius:7px;padding:9px 12px;margin-bottom:10px}
+.hard-rule-title{font-size:9.5px;font-weight:600;color:#f87171;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}
+.hard-rule-val{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#fca5a5}
+
+/* ── BADGES ── */
+.badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:4px;font-size:10px;font-family:'JetBrains Mono',monospace;font-weight:500;white-space:nowrap}
 .b-edu{background:#1a3a6e22;color:#60a5fa;border:1px solid #1a3a6e55}
 .b-com{background:#2e1a6e22;color:#a78bfa;border:1px solid #2e1a6e55}
 .b-res{background:#064e3b22;color:#34d399;border:1px solid #064e3b55}
@@ -101,26 +124,55 @@ select.fi{cursor:pointer}
 .b-spam{background:#45000022;color:#f87171;border:1px solid #45000055}
 .b-fud{background:#45000022;color:#fca5a5;border:1px solid #45000055}
 .b-shill{background:#7c1f0022;color:#fb923c;border:1px solid #7c1f0055}
-.hard-rule{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);border-radius:6px;padding:8px 11px;margin-bottom:9px}
-.hr-title{font-size:9.5px;font-weight:600;color:#f87171;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px}
-.hr-val{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#fca5a5}
-.tx-box{background:var(--bg);border:1px solid rgba(124,58,237,.3);border-radius:7px;padding:10px;margin-top:9px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--t2);line-height:1.7}
-.tx-box a{color:var(--acc2);text-decoration:none}.tx-box a:hover{text-decoration:underline}
-.loading{display:flex;align-items:center;gap:8px;padding:16px;color:var(--t3);font-size:12px}
-.banner{border-radius:8px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:8px;font-size:12px}
-.banner-ok{background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.25)}
-.banner-err{background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.25)}
-.banner-info{background:var(--s3);border:1px solid var(--border)}
 
-/* samples */
-.sample-item{cursor:pointer;padding:8px;background:var(--bg);border:1px solid var(--border);border-radius:7px;margin-bottom:6px;transition:border-color .12s}
-.sample-item:hover{border-color:rgba(124,58,237,.4)}
+/* ── GRID ── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+
+/* ── STAT ── */
+.stat{background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:12px}
+.stat-lbl{font-size:9.5px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em}
+.stat-val{font-family:'Syne',sans-serif;font-size:22px;font-weight:700;margin-top:4px;line-height:1}
+.stat-sub{font-size:10.5px;color:var(--t3);margin-top:2px}
+
+/* ── TABS ── */
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:14px}
+.tab{padding:8px 14px;font-size:12px;color:var(--t3);cursor:pointer;border-bottom:2px solid transparent;background:none;border-top:none;border-left:none;border-right:none;font-family:'DM Sans',sans-serif;transition:all .12s}
+.tab.active{color:var(--acc2);border-bottom-color:var(--acc)}
+.tab:hover:not(.active){color:var(--t2)}
+
+/* ── TABLE ── */
+.tbl{width:100%;border-collapse:collapse;font-size:11.5px}
+.tbl th{text-align:left;font-size:9.5px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;padding:6px 10px;border-bottom:1px solid var(--border)}
+.tbl td{padding:8px 10px;border-bottom:1px solid #1a1a28;vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:#ffffff03}
+.mono{font-family:'JetBrains Mono',monospace}
+
+/* ── EVAL DETAIL ── */
+.eval-detail-wrap{display:grid;grid-template-columns:1fr 280px;gap:14px;align-items:start}
+
+/* ── WEIGHT STRIP ── */
+.wstrip{display:flex;height:16px;border-radius:4px;overflow:hidden;gap:1px;margin:8px 0}
+.wseg{display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff;min-width:0;transition:width .4s}
+
+/* ── PROFILE CARD ── */
+.profile-card{background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px}
+.profile-card.active-p{border-color:var(--acc)40;background:var(--s3)}
+
+/* misc */
+.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
+.pill{display:inline-flex;align-items:center;gap:4px;background:var(--s3);border:1px solid var(--border);border-radius:20px;padding:2px 9px;font-size:10.5px;color:var(--t2);margin:2px}
+.pill button{background:none;border:none;color:var(--t3);cursor:pointer;font-size:11px;line-height:1;padding:0}
+.pill button:hover{color:var(--red)}
+.kbd{background:var(--s3);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--t2)}
 </style>
 </head>
 <body>
 <div class="shell">
 
-<!-- SIDEBAR -->
+<!-- ════ SIDEBAR ════ -->
 <aside class="sidebar">
   <div class="sb-logo">
     <svg class="sb-hex" viewBox="0 0 26 26" fill="none">
@@ -133,636 +185,861 @@ select.fi{cursor:pointer}
   <div class="sb-section">Contract</div>
   <button class="sb-item active" onclick="nav('overview',this)">◈ Overview</button>
 
-  <div class="sb-section">Read</div>
-  <button class="sb-item" onclick="nav('get_stats',this)"><span class="sb-tag r">R</span> get_stats</button>
-  <button class="sb-item" onclick="nav('get_config',this)"><span class="sb-tag r">R</span> get_config</button>
-  <button class="sb-item" onclick="nav('get_count',this)"><span class="sb-tag r">R</span> get_count</button>
-  <button class="sb-item" onclick="nav('get_profiles',this)"><span class="sb-tag r">R</span> get_profiles</button>
-  <button class="sb-item" onclick="nav('get_profile',this)"><span class="sb-tag r">R</span> get_profile</button>
-  <button class="sb-item" onclick="nav('get_evaluation',this)"><span class="sb-tag r">R</span> get_evaluation</button>
-  <button class="sb-item" onclick="nav('get_evaluation_by_id',this)"><span class="sb-tag r">R</span> get_evaluation_by_id</button>
-  <button class="sb-item" onclick="nav('get_approved_urls',this)"><span class="sb-tag r">R</span> get_approved_urls</button>
-  <button class="sb-item" onclick="nav('get_by_category',this)"><span class="sb-tag r">R</span> get_by_category</button>
-  <button class="sb-item" onclick="nav('get_category_breakdown',this)"><span class="sb-tag r">R</span> get_category_breakdown</button>
-  <button class="sb-item" onclick="nav('get_profile_breakdown',this)"><span class="sb-tag r">R</span> get_profile_breakdown</button>
-  <button class="sb-item" onclick="nav('get_hard_rule_breakdown',this)"><span class="sb-tag r">R</span> get_hard_rule_breakdown</button>
-  <button class="sb-item" onclick="nav('get_needs_review',this)"><span class="sb-tag r">R</span> get_needs_review</button>
-  <button class="sb-item" onclick="nav('get_overrides',this)"><span class="sb-tag r">R</span> get_overrides</button>
-  <button class="sb-item" onclick="nav('get_top_scores',this)"><span class="sb-tag r">R</span> get_top_scores</button>
+  <div class="sb-section">Read Methods</div>
+  <button class="sb-item" onclick="nav('get_stats',this)"><span class="sb-tag read">R</span> get_stats</button>
+  <button class="sb-item" onclick="nav('get_config',this)"><span class="sb-tag read">R</span> get_config</button>
+  <button class="sb-item" onclick="nav('get_count',this)"><span class="sb-tag read">R</span> get_count</button>
+  <button class="sb-item" onclick="nav('get_profiles',this)"><span class="sb-tag read">R</span> get_profiles</button>
+  <button class="sb-item" onclick="nav('get_profile',this)"><span class="sb-tag read">R</span> get_profile</button>
+  <button class="sb-item" onclick="nav('get_evaluation',this)"><span class="sb-tag read">R</span> get_evaluation</button>
+  <button class="sb-item" onclick="nav('get_evaluation_by_id',this)"><span class="sb-tag read">R</span> get_evaluation_by_id</button>
+  <button class="sb-item" onclick="nav('get_approved_urls',this)"><span class="sb-tag read">R</span> get_approved_urls</button>
+  <button class="sb-item" onclick="nav('get_by_category',this)"><span class="sb-tag read">R</span> get_by_category</button>
+  <button class="sb-item" onclick="nav('get_category_breakdown',this)"><span class="sb-tag read">R</span> get_category_breakdown</button>
+  <button class="sb-item" onclick="nav('get_profile_breakdown',this)"><span class="sb-tag read">R</span> get_profile_breakdown</button>
+  <button class="sb-item" onclick="nav('get_hard_rule_breakdown',this)"><span class="sb-tag read">R</span> get_hard_rule_breakdown</button>
+  <button class="sb-item" onclick="nav('get_needs_review',this)"><span class="sb-tag read">R</span> get_needs_review</button>
+  <button class="sb-item" onclick="nav('get_overrides',this)"><span class="sb-tag read">R</span> get_overrides</button>
+  <button class="sb-item" onclick="nav('get_top_scores',this)"><span class="sb-tag read">R</span> get_top_scores</button>
 
-  <div class="sb-section">Write</div>
-  <button class="sb-item" onclick="nav('submit_tweet',this)"><span class="sb-tag w">W</span> submit_tweet</button>
-  <button class="sb-item" onclick="nav('submit_tweet_default',this)"><span class="sb-tag w">W</span> submit_tweet_default</button>
-  <button class="sb-item" onclick="nav('admin_override',this)"><span class="sb-tag w">W</span> admin_override</button>
-  <button class="sb-item" onclick="nav('set_profile_weights',this)"><span class="sb-tag w">W</span> set_profile_weights</button>
-  <button class="sb-item" onclick="nav('set_profile_threshold',this)"><span class="sb-tag w">W</span> set_profile_threshold</button>
-  <button class="sb-item" onclick="nav('set_profile_rules',this)"><span class="sb-tag w">W</span> set_profile_rules</button>
-  <button class="sb-item" onclick="nav('set_default_profile',this)"><span class="sb-tag w">W</span> set_default_profile</button>
-  <button class="sb-item" onclick="nav('toggle_pause',this)"><span class="sb-tag w">W</span> toggle_pause</button>
+  <div class="sb-section">Write Methods <span class="sb-tag write" style="font-size:8px">Simulation</span></div>
+  <button class="sb-item" onclick="nav('submit_tweet',this)"><span class="sb-tag write">W</span> submit_tweet</button>
+  <button class="sb-item" onclick="nav('submit_tweet_default',this)"><span class="sb-tag write">W</span> submit_tweet_default</button>
+  <button class="sb-item" onclick="nav('admin_override',this)"><span class="sb-tag write">W</span> admin_override</button>
+  <button class="sb-item" onclick="nav('set_profile_weights',this)"><span class="sb-tag write">W</span> set_profile_weights</button>
+  <button class="sb-item" onclick="nav('set_profile_threshold',this)"><span class="sb-tag write">W</span> set_profile_threshold</button>
+  <button class="sb-item" onclick="nav('set_profile_rules',this)"><span class="sb-tag write">W</span> set_profile_rules</button>
+  <button class="sb-item" onclick="nav('set_profile_description',this)"><span class="sb-tag write">W</span> set_profile_description</button>
+  <button class="sb-item" onclick="nav('set_default_profile',this)"><span class="sb-tag write">W</span> set_default_profile</button>
+  <button class="sb-item" onclick="nav('toggle_pause',this)"><span class="sb-tag write">W</span> toggle_pause</button>
 
   <div class="sb-foot">
-    <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--t3)">
-      <span class="dot dot-pend" id="foot-dot"></span><span id="foot-status">Init…</span>
+    <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--t3)">
+      <span class="status-dot"></span>Simulation Mode · No contract
     </div>
-    <div class="mono" style="font-size:9px;color:var(--t3);margin-top:3px">0x6c1E…dFb93a</div>
+    <div style="font-size:9.5px;color:var(--t3);margin-top:4px;font-family:'JetBrains Mono',monospace">0x9b...96e1</div>
   </div>
 </aside>
 
-<!-- MAIN -->
+<!-- ════ MAIN ════ -->
 <div class="main">
+  <!-- topbar -->
   <div class="topbar">
-    <span class="tb-mono" style="color:var(--t3)">TweetEvaluator_v3</span>
+    <span class="tb-contract">GenLayerTweetEvaluator_v3.py</span>
     <span class="tb-sep">|</span>
-    <span class="tb-addr" onclick="copyText('0x6c1Edb34D13CE3B35eCD55B59F0FABC978dFb93a')" title="Copy address">0x6c1E…dFb93a</span>
-    <span class="tb-sep">|</span>
-    <span style="font-size:11px;color:var(--t3)">Sender:</span>
-    <input id="sender-addr" class="fi" style="width:240px;padding:3px 8px;font-size:11px;font-family:'JetBrains Mono',monospace" 
-           placeholder="0xYourAddress (for write methods)">
-    <div class="net-badge nb-pend" id="net-badge">
-      <span class="dot dot-pend" id="net-dot"></span><span id="net-label">Connecting…</span>
-    </div>
+    <span style="font-size:11px;color:var(--t3)">Deployed at</span>
+    <span class="tb-addr">0x9b...96e1</span>
+    <button class="tb-btn" onclick="showToast('Deploy not available in simulation mode')">Deploy new instance</button>
+    <button class="tb-btn" onclick="showToast('Upgrade not available in simulation mode')">Upgrade code</button>
+    <div class="state-badge"><span class="status-dot" style="width:5px;height:5px"></span>AcceptedFinalized</div>
   </div>
 
+  <!-- body -->
   <div class="body">
+    <!-- LEFT: method list pane (for Read/Write detail) -->
+    <div class="left-pane" id="left-pane" style="display:none">
+      <div style="padding:12px;border-bottom:1px solid var(--border)">
+        <div style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px" id="lp-section-title">Read Methods</div>
+        <div id="lp-method-list"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT: content -->
     <div class="right-pane" id="right-pane"></div>
   </div>
 </div>
-</div>
 
-<div id="toast" style="display:none;position:fixed;bottom:18px;right:18px;background:var(--s3);border:1px solid var(--border);border-radius:8px;padding:9px 15px;font-size:12px;color:var(--t2);z-index:9999;max-width:340px"></div>
+</div><!-- /shell -->
 
-<script type="module">
-// ═══════════════════════════════════════════
-// IMPORT genlayer-js via ESM CDN
-// ═══════════════════════════════════════════
-import { createClient, createAccount } from 'https://esm.sh/genlayer-js@latest';
-import { simulator } from 'https://esm.sh/genlayer-js@latest/chains';
-import { TransactionStatus } from 'https://esm.sh/genlayer-js@latest/types';
+<!-- TOAST -->
+<div id="toast" style="display:none;position:fixed;bottom:20px;right:20px;background:var(--s3);border:1px solid var(--border);border-radius:8px;padding:10px 16px;font-size:12px;color:var(--t2);z-index:9999;max-width:320px"></div>
 
-// ═══════════════════════════════════════════
-// CONFIG
-// ═══════════════════════════════════════════
-const CONTRACT  = '0x6c1Edb34D13CE3B35eCD55B59F0FABC978dFb93a';
-const EXPLORER  = 'https://explorer-studio.genlayer.com/tx/';
-const RPC_URL   = 'https://studio.genlayer.com:8443/api';
+<script>
+// ════════════════════════════════════════════════════════
+// DATA / STATE
+// ════════════════════════════════════════════════════════
+const PROFILES = {
+  lenient:{name:'lenient',desc:'Entry-level moderation. Allows most content except obvious spam. Threshold 40.',
+    threshold:40,weights:{relevance:20,technical:15,originality:20,tone:20,engagement:25},
+    banned:['spam'],minTech:5,minTone:10,color:'#10b981',isDefault:false},
+  moderate:{name:'moderate',desc:'Standard community moderation. Filters spam and FUD. Threshold 55.',
+    threshold:55,weights:{relevance:20,technical:20,originality:20,tone:25,engagement:15},
+    banned:['spam','fud'],minTech:20,minTone:25,color:'#7c3aed',isDefault:true},
+  strict:{name:'strict',desc:'Aggressive moderation for technical channels. Bans memes, shills, FUD, spam. Threshold 75.',
+    threshold:75,weights:{relevance:25,technical:25,originality:20,tone:25,engagement:5},
+    banned:['spam','fud','shill','meme'],minTech:45,minTone:35,color:'#ef4444',isDefault:false},
+}
+const DIMS = ['relevance','technical','originality','tone','engagement']
+const DLABELS = {relevance:'Relevance',technical:'Technical Accuracy',originality:'Originality',tone:'Tone Quality',engagement:'Engagement Potential'}
+const DCOLORS = {relevance:'#60a5fa',technical:'#34d399',originality:'#a78bfa',tone:'#fbbf24',engagement:'#f87171'}
+const CATMAP = {educational:'b-edu',community:'b-com',research:'b-res',meme:'b-meme',spam:'b-spam',fud:'b-fud',shill:'b-shill'}
 
-// Custom chain config for hosted Studio
-const studioChain = {
-  ...simulator,
-  rpcUrls: {
-    default: { http: [RPC_URL] },
-    public:  { http: [RPC_URL] },
-  },
-};
+let STATE = {
+  evaluations:[],
+  overrides:[],
+  paused:false,
+  defaultProfile:'moderate',
+  nextIdx:0,
+}
 
-// Client (read-only, no account needed for reads)
-let client = null;
-let account = null;
+// seed some evaluations
+function seedData(){
+  const seeds=[
+    {url:'https://x.com/builder/status/A1',text:'Deep dive into GenLayer\'s Equivalence Principle — heterogeneous AI validators reaching deterministic consensus. Benchmark data included.',dims:{relevance:92,technical:82,originality:88,tone:85,engagement:90},cat:'research',profile:'strict'},
+    {url:'https://x.com/team/status/C2',text:'🚀 GenLayer Testnet: 394 validators live. Optimistic Democracy consensus time down 40%. Full metrics: [link]',dims:{relevance:88,technical:78,originality:62,tone:90,engagement:84},cat:'community',profile:'moderate'},
+    {url:'https://x.com/meme/status/B1',text:'GenLayer validators when tweet is ambiguous 😭 [meme image]',dims:{relevance:60,technical:12,originality:70,tone:72,engagement:85},cat:'meme',profile:'lenient'},
+    {url:'https://x.com/spam/status/S1',text:'🚨 FREE TOKENS follow+RT for airdrop LIMITED TIME!!!',dims:{relevance:8,technical:0,originality:5,tone:5,engagement:20},cat:'spam',profile:'moderate'},
+    {url:'https://x.com/dev/status/D3',text:'Formal verification of GenVM execution model. Proved soundness + completeness. 10M test cases, zero counter-examples.',dims:{relevance:95,technical:90,originality:90,tone:90,engagement:85},cat:'research',profile:'strict'},
+  ]
+  seeds.forEach(s=>{
+    const p=PROFILES[s.profile]
+    const result=applyProfile(s.dims,s.cat,p)
+    const id=genId(s.url,'0x'+Math.random().toString(16).slice(2,10))
+    STATE.evaluations.push({eval_id:id,url:s.url,text:s.text,submitter:'0xSEED'+STATE.nextIdx++,
+      timestamp:Math.floor(Date.now()/1000)-Math.floor(Math.random()*86400),
+      profile:s.profile,dimensions:s.dims,total_score:result.score,
+      verdict:result.verdict,category:s.cat,confidence:'high',feedback:getFeedback(s.cat,result.verdict,s.dims),
+      hard_rule_triggered:result.hardRule||''})
+  })
+}
 
-function initClient(privKey) {
-  const cfg = { chain: studioChain };
-  if (privKey) {
-    account = createAccount(privKey);
-    cfg.account = account;
+function genId(url,addr){
+  const clean=url.replace(/https?:\/\//,'').replace(/[^a-zA-Z0-9]/g,'_').slice(0,30)
+  return clean+'_'+addr.slice(-8)
+}
+
+function applyProfile(dims,cat,profile){
+  const w=profile.weights
+  const score=Math.round(DIMS.reduce((acc,d)=>acc+(dims[d]*w[d]/100),0))
+  if(profile.banned.includes(cat)) return{verdict:'rejected',score,hardRule:`BANNED_CATEGORY:${cat}`,confidence:'high'}
+  if(dims.technical<profile.minTech) return{verdict:'rejected',score,hardRule:`MIN_TECHNICAL:${dims.technical}<${profile.minTech}`,confidence:'high'}
+  if(dims.tone<profile.minTone) return{verdict:'rejected',score,hardRule:`MIN_TONE:${dims.tone}<${profile.minTone}`,confidence:'high'}
+  const conf=Math.abs(score-profile.threshold)<8?'medium':'high'
+  const conf2=conf==='medium'&&score<profile.threshold?'needs_review':null
+  if(conf2) return{verdict:'needs_review',score,hardRule:'LOW_CONFIDENCE',confidence:'low'}
+  return{verdict:score>=profile.threshold?'approved':'rejected',score,hardRule:'',confidence:conf}
+}
+
+function scoreTweet(text){
+  const l=text.toLowerCase()
+  const gl=['genlayer','equivalence principle','genvm','intelligent contract','optimistic democracy','validator']
+  const tech=['consensus','algorithm','proof','benchmark','analysis','protocol','formal','verification']
+  const spam=['free tokens','airdrop','follow.*rt','giveaway','limited time','!!']
+  const fud=['vaporware','dump','rug','scam','ngmi','fake']
+  if(spam.some(t=>new RegExp(t).test(l))) return{dims:{relevance:10,technical:0,originality:5,tone:5,engagement:20},cat:'spam'}
+  if(fud.filter(t=>l.includes(t)).length>=2) return{dims:{relevance:55,technical:5,originality:25,tone:8,engagement:30},cat:'fud'}
+  const glHits=gl.filter(t=>l.includes(t)).length
+  const techHits=tech.filter(t=>l.includes(t)).length
+  const isMeme=(l.includes('😭')||l.includes('💀')||l.includes('lol')||l.includes('ngmi'))&&l.length<200
+  const isShill=(l.includes('moon')||l.includes('100x')||l.includes('pump')||l.includes('buy now'))
+  if(isShill) return{dims:{relevance:50,technical:10,originality:20,tone:20,engagement:60},cat:'shill'}
+  if(isMeme) return{dims:{relevance:Math.min(100,50+glHits*10),technical:12,originality:65,tone:68,engagement:80},cat:'meme'}
+  const isResearch=(l.includes('paper')||l.includes('proof')||l.includes('benchmark')||l.includes('analysis'))&&techHits>1
+  const isCommunity=(l.includes('update')||l.includes('launch')||l.includes('milestone')||l.includes('partner'))
+  const cat=isResearch?'research':isCommunity?'community':glHits>1?'educational':'community'
+  return{dims:{
+    relevance:Math.min(100,35+glHits*13+techHits*4+(text.length>200?8:0)),
+    technical:Math.min(100,20+techHits*14+glHits*6),
+    originality:Math.min(100,35+(text.length>180?18:0)+(isResearch?20:0)+(text.includes('🧵')?10:0)),
+    tone:Math.min(100,65+glHits*4),
+    engagement:Math.min(100,55+(text.includes('🚀')||text.includes('💡')||text.includes('🧵')?18:0)),
+  },cat}
+}
+
+function getFeedback(cat,verdict,dims){
+  if(verdict==='approved'){
+    if(cat==='research') return 'Strong technical content with specific GenLayer references. Claims are accurate and well-supported.'
+    if(cat==='educational') return 'Clear educational value for the GenLayer community. Good engagement potential for developers.'
+    if(cat==='community') return 'Solid ecosystem update with relevant milestones. Professional tone and appropriate engagement.'
+    return 'Content meets community standards and threshold criteria.'
   }
-  client = createClient(cfg);
-  return client;
+  if(dims.tone<20) return 'Tone quality is critically low — hostile or manipulative framing detected.'
+  if(dims.technical<15) return 'No verifiable technical claims. Content lacks substance for the GenLayer ecosystem.'
+  return 'Content falls below the required threshold for this profile. Improve relevance and technical accuracy.'
 }
 
-// ═══════════════════════════════════════════
-// RPC HELPERS
-// ═══════════════════════════════════════════
-async function glRead(fn, args = []) {
-  if (!client) initClient();
-  const raw = await client.readContract({
-    address: CONTRACT,
-    functionName: fn,
-    args,
-    stateStatus: 'accepted',
-  });
-  if (typeof raw === 'string') { try { return JSON.parse(raw); } catch { return raw; } }
-  return raw;
+seedData()
+
+// ════════════════════════════════════════════════════════
+// NAVIGATION
+// ════════════════════════════════════════════════════════
+let currentPage=''
+function nav(page,btn){
+  currentPage=page
+  document.querySelectorAll('.sb-item').forEach(b=>b.classList.remove('active'))
+  if(btn) btn.classList.add('active')
+  const lp=document.getElementById('left-pane')
+  lp.style.display='none'
+  render(page)
 }
 
-async function glWrite(fn, args = []) {
-  const pk = document.getElementById('sender-pk')?.value?.trim();
-  if (pk) { initClient(pk); }
-  else if (!client) { initClient(); }
-
-  const senderAddr = document.getElementById('sender-addr').value.trim();
-  const txHash = await client.writeContract({
-    account: account || (senderAddr ? { address: senderAddr } : undefined),
-    address: CONTRACT,
-    functionName: fn,
-    args,
-    value: 0n,
-  });
-  return txHash;
-}
-
-async function glWait(txHash) {
-  return await client.waitForTransactionReceipt({
-    hash: txHash,
-    status: TransactionStatus.FINALIZED,
-    retries: 60,
-    interval: 3000,
-  });
-}
-
-// ═══════════════════════════════════════════
-// CONNECTIVITY CHECK
-// ═══════════════════════════════════════════
-async function checkConn() {
-  setNet('pend', 'Connecting…');
-  try {
-    initClient();
-    const count = await glRead('get_count');
-    setNet('live', `Live · ${count} evals`);
-    setFoot('live', 'Connected');
-  } catch(e) {
-    setNet('err', 'RPC Error');
-    setFoot('err', 'No connection');
-    console.warn('GenLayer:', e.message);
+function render(page){
+  const rp=document.getElementById('right-pane')
+  const pages={
+    overview:renderOverview,
+    get_stats:()=>renderReadMethod('get_stats','No parameters',null,()=>JSON.stringify(computeStats(),null,2)),
+    get_config:()=>renderReadMethod('get_config','No parameters',null,()=>JSON.stringify(computeConfig(),null,2)),
+    get_count:()=>renderReadMethod('get_count','No parameters',null,()=>STATE.evaluations.length),
+    get_profiles:()=>renderReadMethod('get_profiles','No parameters',null,()=>JSON.stringify(Object.values(PROFILES).map(profileToJSON),null,2)),
+    get_profile:()=>renderReadMethod('get_profile','name: str',renderProfileInput,callGetProfile),
+    get_evaluation:()=>renderReadMethod('get_evaluation','index: u32',renderIndexInput,callGetEvaluation),
+    get_evaluation_by_id:()=>renderReadMethod('get_evaluation_by_id','eval_id: str',renderEvalIdInput,callGetEvaluationById),
+    get_approved_urls:()=>renderReadMethod('get_approved_urls','No parameters',null,()=>JSON.stringify(STATE.evaluations.filter(e=>e.verdict==='approved').map(e=>e.url),null,2)),
+    get_by_category:()=>renderReadMethod('get_by_category','category: str',renderCategoryInput,callGetByCategory),
+    get_category_breakdown:()=>renderReadMethod('get_category_breakdown','No parameters',null,()=>JSON.stringify(computeCatBreakdown(),null,2)),
+    get_profile_breakdown:()=>renderReadMethod('get_profile_breakdown','No parameters',null,()=>JSON.stringify(computeProfileBreakdown(),null,2)),
+    get_hard_rule_breakdown:()=>renderReadMethod('get_hard_rule_breakdown','No parameters',null,()=>JSON.stringify(computeHardRuleBreakdown(),null,2)),
+    get_needs_review:()=>renderReadMethod('get_needs_review','No parameters',null,()=>JSON.stringify(STATE.evaluations.filter(e=>e.verdict==='needs_review'||e.confidence==='low').map(evalToSummary),null,2)),
+    get_overrides:()=>renderReadMethod('get_overrides','No parameters',null,()=>JSON.stringify(STATE.overrides,null,2)),
+    get_top_scores:()=>renderReadMethod('get_top_scores','n: u8',renderNInput,callGetTopScores),
+    submit_tweet:renderSubmitTweet,
+    submit_tweet_default:renderSubmitTweetDefault,
+    admin_override:renderAdminOverride,
+    set_profile_weights:renderSetProfileWeights,
+    set_profile_threshold:renderSetProfileThreshold,
+    set_profile_rules:renderSetProfileRules,
+    set_profile_description:renderSetProfileDescription,
+    set_default_profile:renderSetDefaultProfile,
+    toggle_pause:renderTogglePause,
   }
+  if(pages[page]) pages[page]()
+  else rp.innerHTML='<div style="padding:40px;color:var(--t3)">Select a method from the sidebar</div>'
 }
 
-function setNet(state, txt) {
-  const b = document.getElementById('net-badge');
-  const d = document.getElementById('net-dot');
-  const l = document.getElementById('net-label');
-  b.className = 'net-badge';
-  d.className = 'dot';
-  if (state==='live'){ b.classList.add('nb-live'); d.classList.add('dot-live'); }
-  else if (state==='err'){ b.classList.add('nb-err'); d.classList.add('dot-err'); }
-  else { b.classList.add('nb-pend'); d.classList.add('dot-pend'); }
-  l.textContent = txt;
-}
-function setFoot(state, txt) {
-  const d = document.getElementById('foot-dot');
-  const s = document.getElementById('foot-status');
-  d.className = 'dot';
-  d.classList.add(state==='live'?'dot-live':state==='err'?'dot-err':'dot-pend');
-  s.textContent = txt;
-}
-
-// ═══════════════════════════════════════════
-// NAV
-// ═══════════════════════════════════════════
-const DIMS = ['relevance','technical','originality','tone','engagement'];
-const DLABELS = {relevance:'Relevance',technical:'Technical Accuracy',originality:'Originality',tone:'Tone Quality',engagement:'Engagement Potential'};
-const DCOLORS = {relevance:'#60a5fa',technical:'#34d399',originality:'#a78bfa',tone:'#fbbf24',engagement:'#f87171'};
-const CATMAP  = {educational:'b-edu',community:'b-com',research:'b-res',meme:'b-meme',spam:'b-spam',fud:'b-fud',shill:'b-shill'};
-
-window.nav = function(page, btn) {
-  document.querySelectorAll('.sb-item').forEach(b=>b.classList.remove('active'));
-  if(btn) btn.classList.add('active');
-  ({
-    overview: renderOverview,
-    get_stats:()=>renderRead('get_stats',[],null),
-    get_config:()=>renderRead('get_config',[],null),
-    get_count:()=>renderRead('get_count',[],null),
-    get_profiles:()=>renderRead('get_profiles',[],null),
-    get_profile:()=>renderReadP('get_profile',[{id:'p-name',label:'name',type:'select',opts:['lenient','moderate','strict']}],v=>[v['p-name']]),
-    get_evaluation:()=>renderReadP('get_evaluation',[{id:'p-idx',label:'index (u32)',type:'number',val:'0'}],v=>[parseInt(v['p-idx'])]),
-    get_evaluation_by_id:()=>renderReadP('get_evaluation_by_id',[{id:'p-eid',label:'eval_id',type:'text',ph:'paste eval_id'}],v=>[v['p-eid']]),
-    get_approved_urls:()=>renderRead('get_approved_urls',[],null),
-    get_by_category:()=>renderReadP('get_by_category',[{id:'p-cat',label:'category',type:'select',opts:['educational','community','research','meme','spam','fud','shill']}],v=>[v['p-cat']]),
-    get_category_breakdown:()=>renderRead('get_category_breakdown',[],null),
-    get_profile_breakdown:()=>renderRead('get_profile_breakdown',[],null),
-    get_hard_rule_breakdown:()=>renderRead('get_hard_rule_breakdown',[],null),
-    get_needs_review:()=>renderRead('get_needs_review',[],null),
-    get_overrides:()=>renderRead('get_overrides',[],null),
-    get_top_scores:()=>renderReadP('get_top_scores',[{id:'p-n',label:'n (u8)',type:'number',val:'5'}],v=>[parseInt(v['p-n']||5)]),
-    submit_tweet: renderSubmitTweet,
-    submit_tweet_default: renderSubmitDefault,
-    admin_override: renderAdminOverride,
-    set_profile_weights: renderSetWeights,
-    set_profile_threshold: renderSetThreshold,
-    set_profile_rules: renderSetRules,
-    set_default_profile: renderSetDefault,
-    toggle_pause: renderTogglePause,
-  }[page] || (()=>{}))();
-};
-
-// ═══════════════════════════════════════════
+// ════════════════════════════════════════════════════════
 // OVERVIEW
-// ═══════════════════════════════════════════
-async function renderOverview() {
-  const rp = document.getElementById('right-pane');
-  rp.innerHTML = `<div class="pane-title">Contract Overview</div>
-  <div class="pane-sub">GenLayerTweetEvaluator_v3 · <span class="mono" style="color:var(--acc2)">${CONTRACT}</span></div>
-  <div class="loading"><span class="spinner"></span> Loading from chain…</div>`;
-  try {
-    const [s, c, pr] = await Promise.all([
-      glRead('get_stats'), glRead('get_config'), glRead('get_profiles')
-    ]);
-    const stats   = typeof s==='string'?JSON.parse(s):s||{};
-    const config  = typeof c==='string'?JSON.parse(c):c||{};
-    const profiles= typeof pr==='string'?JSON.parse(pr):pr||[];
-    rp.innerHTML = `
-    <div class="pane-title">Contract Overview</div>
-    <div class="pane-sub">GenLayerTweetEvaluator_v3 · <span class="mono" style="color:var(--acc2)">${CONTRACT}</span></div>
-    <div class="banner banner-ok"><span style="color:var(--green)">●</span><span style="color:var(--t2)">Connected to GenLayer Studio · Live data</span>
-      <button class="btn btn-s" style="margin-left:auto;padding:2px 9px;font-size:11px" onclick="nav('overview',null)">↻ Refresh</button></div>
-    <div class="g4" style="margin-bottom:12px">
-      <div class="stat"><div class="stat-lbl">Evaluations</div><div class="stat-val">${stats.total||0}</div><div class="stat-sub">${profiles.length} profiles</div></div>
-      <div class="stat"><div class="stat-lbl">Approved</div><div class="stat-val" style="color:var(--green)">${stats.approved||0}</div><div class="stat-sub">${stats.total?Math.round((stats.approved||0)/stats.total*100):0}%</div></div>
-      <div class="stat"><div class="stat-lbl">Rejected</div><div class="stat-val" style="color:var(--red)">${stats.rejected||0}</div><div class="stat-sub">${stats.hard_rule_rejections||0} hard rules</div></div>
-      <div class="stat"><div class="stat-lbl">Avg Score</div><div class="stat-val" style="color:var(--acc2)">${stats.avg_total_score||0}</div></div>
+// ════════════════════════════════════════════════════════
+function renderOverview(){
+  const s=computeStats(),c=computeConfig()
+  const rp=document.getElementById('right-pane')
+  rp.innerHTML=`
+  <div class="pane-title">Contract Overview</div>
+  <div class="pane-sub">GenLayerTweetEvaluator_v3.py · 0x9b...96e1 · Simulation Mode</div>
+
+  <div class="g4" style="margin-bottom:14px">
+    <div class="stat"><div class="stat-lbl">Total Evaluations</div><div class="stat-val">${s.total}</div><div class="stat-sub">across ${Object.keys(PROFILES).length} profiles</div></div>
+    <div class="stat"><div class="stat-lbl">Approved</div><div class="stat-val" style="color:var(--green)">${s.approved}</div><div class="stat-sub">${s.total?Math.round(s.approved/s.total*100):0}% rate</div></div>
+    <div class="stat"><div class="stat-lbl">Rejected</div><div class="stat-val" style="color:var(--red)">${s.rejected}</div><div class="stat-sub">${s.hard_rule_rejections} hard rules</div></div>
+    <div class="stat"><div class="stat-lbl">Avg Score</div><div class="stat-val" style="color:var(--acc2)">${s.avg_total_score}</div><div class="stat-sub">weighted score</div></div>
+  </div>
+
+  <div class="g2" style="margin-bottom:14px">
+    <div class="section-card">
+      <div class="sc-title">Config</div>
+      ${kvRows({Owner:'0x9b...96e1',Paused:STATE.paused?'⚠ YES':'No',Default_Profile:STATE.defaultProfile,'Total Evals':STATE.evaluations.length})}
     </div>
-    <div class="g2" style="margin-bottom:12px">
-      <div class="card"><div class="card-title">Config</div>
-        ${kv({'Owner':config.owner||'—','Paused':config.paused?'⚠ YES':'No','Default':config.default_profile||'—','Total':config.total_evaluations||0})}</div>
-      <div class="card"><div class="card-title">Profiles</div>
-        ${profiles.map(p=>`<div style="display:flex;align-items:center;gap:7px;margin-bottom:7px">
-          <span style="width:7px;height:7px;border-radius:50%;background:${p.name==='lenient'?'#10b981':p.name==='strict'?'#ef4444':'#7c3aed'}"></span>
-          <span style="font-weight:500">${p.name}</span>
-          <span style="color:var(--t3);font-size:11px">thr <span class="mono">${p.threshold}</span></span>
-          ${p.is_default?'<span style="font-size:9px;background:var(--accg);color:var(--acc2);border:1px solid rgba(124,58,237,.25);padding:1px 5px;border-radius:3px;margin-left:auto">default</span>':''}
-        </div>`).join('')}
-      </div>
+    <div class="section-card">
+      <div class="sc-title">Profiles</div>
+      ${Object.values(PROFILES).map(p=>`
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <span style="width:8px;height:8px;border-radius:50%;background:${p.color};flex-shrink:0"></span>
+        <span style="color:var(--t1);font-weight:500;text-transform:capitalize">${p.name}</span>
+        <span style="color:var(--t3);font-size:11px">threshold: <span class="mono">${p.threshold}</span></span>
+        ${p.isDefault?'<span style="font-size:9px;background:var(--accg);color:var(--acc2);border:1px solid rgba(124,58,237,.25);padding:1px 5px;border-radius:3px;margin-left:auto">default</span>':''}
+      </div>`).join('')}
     </div>
-    <div class="card"><div class="card-title">Quick Actions</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-p" onclick="nav('submit_tweet',null)">⊕ Submit Tweet</button>
-        <button class="btn btn-s" onclick="nav('get_stats',null)">Get Stats</button>
-        <button class="btn btn-s" onclick="nav('get_profiles',null)">Get Profiles</button>
-        <button class="btn btn-s" onclick="nav('get_needs_review',null)">Needs Review</button>
-      </div>
-    </div>`;
-  } catch(e) {
-    rp.innerHTML += `<div class="banner banner-err"><span style="color:var(--red)">✕</span><span style="color:var(--t2)">${e.message}</span>
-      <button class="btn btn-s" style="margin-left:auto;padding:2px 9px;font-size:11px" onclick="nav('overview',null)">Retry</button></div>`;
-  }
+  </div>
+
+  <div class="section-card">
+    <div class="sc-title">Quick Actions</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-primary" onclick="nav('submit_tweet',document.querySelector('.sb-item:nth-last-child(9)'))">⊕ Submit Tweet</button>
+      <button class="btn btn-sec" onclick="nav('get_stats',null)">Get Stats</button>
+      <button class="btn btn-sec" onclick="nav('get_profiles',null)">Get Profiles</button>
+      <button class="btn btn-sec" onclick="nav('get_needs_review',null)">Needs Review</button>
+    </div>
+  </div>
+  `
 }
 
-function kv(obj) {
+function kvRows(obj){
   return Object.entries(obj).map(([k,v])=>`
-  <div style="display:flex;justify-content:space-between;font-size:11.5px;padding:4px 0;border-bottom:1px solid var(--border)">
-    <span style="color:var(--t3)">${k}</span><span class="mono" style="color:var(--t1)">${v}</span>
-  </div>`).join('');
+  <div style="display:flex;justify-content:space-between;font-size:11.5px;padding:5px 0;border-bottom:1px solid var(--border)">
+    <span style="color:var(--t3)">${k.replace(/_/g,' ')}</span>
+    <span class="mono" style="color:var(--t1)">${v}</span>
+  </div>`).join('')
 }
 
-// ═══════════════════════════════════════════
-// READ METHODS
-// ═══════════════════════════════════════════
-function renderRead(fn, args, _) {
-  const rp = document.getElementById('right-pane');
-  rp.innerHTML = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
-    <span class="sb-tag r">Read</span><div class="pane-title" style="margin:0">${fn}</div></div>
-  <div class="pane-sub">No parameters</div>
-  <div class="card"><button class="btn btn-p" id="do-btn">Call Contract</button></div>
-  <div class="card" style="display:none" id="out-card">
-    <div class="out-label"><span>Return Value</span><button class="copy-btn" onclick="copyOut()">Copy</button></div>
-    <div class="out-box" id="out-box"></div>
-  </div>`;
-  document.getElementById('do-btn').onclick = async () => {
-    const btn = document.getElementById('do-btn');
-    btn.disabled=true; btn.innerHTML='<span class="spinner"></span>';
-    document.getElementById('out-card').style.display='block';
-    try {
-      const res = await glRead(fn, args);
-      document.getElementById('out-box').textContent = typeof res==='object'?JSON.stringify(res,null,2):String(res);
-    } catch(e) {
-      document.getElementById('out-box').innerHTML = `<span style="color:var(--red)">${e.message}</span>`;
-    }
-    btn.disabled=false; btn.textContent='Call Contract';
-  };
-}
-
-function renderReadP(fn, fields, argsFn) {
-  const rp = document.getElementById('right-pane');
-  rp.innerHTML = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
-    <span class="sb-tag r">Read</span><div class="pane-title" style="margin:0">${fn}</div></div>
-  <div class="card"><div class="card-title">Parameters</div>
-    ${fields.map(f=>`<div class="field"><label>${f.label}</label>
-      ${f.type==='select'
-        ? `<select class="fi" id="${f.id}">${(f.opts||[]).map(o=>`<option>${o}</option>`).join('')}</select>`
-        : `<input class="fi" type="${f.type||'text'}" id="${f.id}" value="${f.val||''}" placeholder="${f.ph||''}">`
-      }</div>`).join('')}
-    <div style="margin-top:8px"><button class="btn btn-p" id="do-btn">Call Contract</button></div>
+// ════════════════════════════════════════════════════════
+// READ METHOD RENDERER
+// ════════════════════════════════════════════════════════
+function renderReadMethod(name,paramDesc,inputRenderer,callFn){
+  const rp=document.getElementById('right-pane')
+  rp.innerHTML=`
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+    <span class="sb-tag read">Read</span>
+    <div class="pane-title" style="margin:0">${name}</div>
   </div>
-  <div class="card" style="display:none" id="out-card">
-    <div class="out-label"><span>Return Value</span><button class="copy-btn" onclick="copyOut()">Copy</button></div>
-    <div class="out-box" id="out-box"></div>
-  </div>`;
-  document.getElementById('do-btn').onclick = async () => {
-    const btn = document.getElementById('do-btn');
-    btn.disabled=true; btn.innerHTML='<span class="spinner"></span>';
-    document.getElementById('out-card').style.display='block';
-    try {
-      const vals = {};
-      fields.forEach(f=>{ vals[f.id]=document.getElementById(f.id).value; });
-      const res = await glRead(fn, argsFn(vals));
-      document.getElementById('out-box').textContent = typeof res==='object'?JSON.stringify(res,null,2):String(res);
-    } catch(e) {
-      document.getElementById('out-box').innerHTML = `<span style="color:var(--red)">${e.message}</span>`;
-    }
-    btn.disabled=false; btn.textContent='Call Contract';
-  };
+  <div class="pane-sub">${paramDesc}</div>
+  <div class="section-card">
+    <div class="sc-title">Parameters</div>
+    <div id="param-area">${inputRenderer?inputRenderer():
+      '<div style="color:var(--t3);font-size:12px;font-style:italic">No parameters required</div>'}</div>
+    <div style="margin-top:12px">
+      <button class="btn btn-primary" onclick="doRead()">Call Contract</button>
+    </div>
+  </div>
+  <div class="section-card" id="output-card" style="display:none">
+    <div class="output-label">
+      <span>Return Value</span>
+      <button class="copy-btn" onclick="copyOutput()">Copy</button>
+    </div>
+    <div class="output-box" id="output-box"><span class="output-empty">No output yet</span></div>
+  </div>`
+  window.__readFn=callFn
+  window.__readNoParm=!inputRenderer
 }
 
-window.copyOut = () => navigator.clipboard.writeText(document.getElementById('out-box').textContent).then(()=>toast('Copied!'));
+function doRead(){
+  const out=document.getElementById('output-box')
+  const card=document.getElementById('output-card')
+  card.style.display='block'
+  out.innerHTML='<span style="color:var(--t3)">Calling...</span>'
+  setTimeout(()=>{
+    try{
+      const res=window.__readFn()
+      out.textContent=typeof res==='object'?JSON.stringify(res,null,2):String(res)
+    }catch(e){out.innerHTML=`<span style="color:var(--red)">Error: ${e.message}</span>`}
+  },300)
+}
 
-// ═══════════════════════════════════════════
-// SUBMIT TWEET
-// ═══════════════════════════════════════════
-const SAMPLES = [
-  {url:'https://x.com/researcher/status/001',text:"Deep dive into GenLayer's Equivalence Principle — heterogeneous AI validators reaching deterministic consensus. Full benchmark data + formal analysis. 10M test cases, zero failures. 🧵",cat:'research',hint:'High score · research'},
-  {url:'https://x.com/genlayer/status/002',text:"🚀 GenLayer Testnet: 394 validators live. Optimistic Democracy consensus time down 40%. Stability under adversarial conditions confirmed.",cat:'community',hint:'Community update'},
-  {url:'https://x.com/memer/status/004',text:"GenLayer validators when tweet is slightly ambiguous 😭 [three validators arguing: APPROVED / REJECTED / idk lol]",cat:'meme',hint:'Meme · banned in strict'},
-  {url:'https://x.com/fudder/status/005',text:"GenLayer is vaporware. No real users, no real validators. 'Equivalence Principle' is just marketing BS.",cat:'fud',hint:'FUD · hard reject'},
-  {url:'https://x.com/spambot/status/006',text:"🚨 FREE TOKENS 🚨 Follow + RT + wallet. GenLayer airdrop NOW. Limited 1000 spots!!!! 💰💰💰",cat:'spam',hint:'Spam · hard reject'},
-];
+function copyOutput(){
+  const t=document.getElementById('output-box').textContent
+  navigator.clipboard.writeText(t).then(()=>showToast('Copied!'))
+}
 
-function renderSubmitTweet() {
-  const rp = document.getElementById('right-pane');
-  rp.innerHTML = `
-  <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
-    <span class="sb-tag w">Write</span><div class="pane-title" style="margin:0">submit_tweet</div></div>
-  <div class="pane-sub">Submit tweet for AI evaluation → returns eval_id</div>
+// param renderers
+function renderProfileInput(){return`<div class="field"><label>name</label><select class="fi" id="p-name"><option value="lenient">lenient</option><option value="moderate" selected>moderate</option><option value="strict">strict</option></select></div>`}
+function renderIndexInput(){return`<div class="field"><label>index (u32)</label><input class="fi" id="p-index" type="number" min="0" value="0" placeholder="0"></div>`}
+function renderEvalIdInput(){return`<div class="field"><label>eval_id</label><select class="fi" id="p-eval-id">${STATE.evaluations.map(e=>`<option value="${e.eval_id}">${e.eval_id}</option>`).join('')||'<option>No evaluations yet</option>'}</select></div>`}
+function renderCategoryInput(){return`<div class="field"><label>category</label><select class="fi" id="p-cat"><option>educational</option><option>community</option><option>research</option><option>meme</option><option>spam</option><option>fud</option><option>shill</option></select></div>`}
+function renderNInput(){return`<div class="field"><label>n (u8)</label><input class="fi" id="p-n" type="number" min="1" max="50" value="5" placeholder="5"></div>`}
 
-  <div class="banner banner-info">
-    <span style="color:var(--amber)">ℹ</span>
-    <span style="color:var(--t3)">Вставь приватный ключ (опционально) ниже для подписи транзакций, или используй адрес Sender в топбаре.</span>
+function callGetProfile(){
+  const n=document.getElementById('p-name').value
+  const p=PROFILES[n];if(!p)throw new Error('Profile not found')
+  return JSON.stringify(profileToJSON(p),null,2)
+}
+function callGetEvaluation(){
+  const i=parseInt(document.getElementById('p-index').value)
+  const e=STATE.evaluations[i];if(!e)throw new Error('Index out of range')
+  return JSON.stringify(evalToFull(e),null,2)
+}
+function callGetEvaluationById(){
+  const id=document.getElementById('p-eval-id').value
+  const e=STATE.evaluations.find(x=>x.eval_id===id);if(!e)throw new Error('Not found')
+  return JSON.stringify(evalToFull(e),null,2)
+}
+function callGetByCategory(){
+  const cat=document.getElementById('p-cat').value
+  return JSON.stringify(STATE.evaluations.filter(e=>e.category===cat).map(evalToSummary),null,2)
+}
+function callGetTopScores(){
+  const n=parseInt(document.getElementById('p-n').value)||5
+  return JSON.stringify([...STATE.evaluations].sort((a,b)=>b.total_score-a.total_score).slice(0,n).map(evalToSummary),null,2)
+}
+
+// ════════════════════════════════════════════════════════
+// SUBMIT TWEET — main write method
+// ════════════════════════════════════════════════════════
+function renderSubmitTweet(){
+  const rp=document.getElementById('right-pane')
+  rp.innerHTML=`
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+    <span class="sb-tag write">Write</span>
+    <div class="pane-title" style="margin:0">submit_tweet</div>
   </div>
+  <div class="pane-sub">Submit a tweet for AI evaluation · returns eval_id</div>
 
-  <div style="display:grid;grid-template-columns:1fr 280px;gap:12px;align-items:start">
+  <div style="display:grid;grid-template-columns:1fr 320px;gap:14px;align-items:start">
     <div>
-      <div class="card">
-        <div class="card-title">Parameters</div>
-        <div class="field"><label>tweet_url</label><input class="fi" id="st-url" value="https://x.com/genlayer/status/1234" placeholder="https://x.com/user/status/..."></div>
-        <div class="field"><label>tweet_text</label>
-          <textarea class="fi" id="st-text" rows="6" oninput="document.getElementById('st-cnt').textContent=this.value.length+' ch'">Just published a deep dive into GenLayer's Equivalence Principle — heterogeneous AI validators reaching deterministic consensus. Benchmark data included. 🧵</textarea>
-          <div style="text-align:right;font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--t3)" id="st-cnt">0 ch</div>
+      <div class="section-card">
+        <div class="sc-title">Parameters</div>
+        <div class="field"><label>tweet_url</label><input class="fi" id="st-url" placeholder="https://x.com/user/status/..." value="https://x.com/genlayer/status/1234"></div>
+        <div class="field">
+          <label>tweet_text</label>
+          <textarea class="fi" id="st-text" rows="6" oninput="updateStCounter()" placeholder="Paste tweet text here...">Just published a deep dive into GenLayer's Equivalence Principle — heterogeneous AI validators reaching deterministic consensus on non-deterministic tasks. Full benchmark data + formal analysis. 🧵</textarea>
+          <div style="text-align:right;font-size:10.5px;font-family:'JetBrains Mono',monospace;color:var(--t3)" id="st-counter">0 chars</div>
         </div>
-        <div class="field"><label>profile_name (empty = default)</label>
-          <select class="fi" id="st-prof">
-            <option value="">— Default —</option>
+        <div class="field"><label>profile_name (leave empty for default)</label>
+          <select class="fi" id="st-profile">
+            <option value="">— Use Default (${STATE.defaultProfile}) —</option>
             <option value="lenient">lenient</option>
             <option value="moderate">moderate</option>
             <option value="strict">strict</option>
           </select>
         </div>
-        <div class="field"><label>Private Key (для подписи, опционально)</label>
-          <input class="fi" type="password" id="sender-pk" placeholder="0x… приватный ключ"></div>
         <div style="display:flex;gap:8px;margin-top:4px">
-          <button class="btn btn-p" id="st-btn">Send Transaction</button>
-          <button class="btn btn-s" onclick="loadSampleRnd()">Load sample</button>
+          <button class="btn btn-primary" id="st-btn" onclick="doSubmitTweet()"><span id="st-btn-lbl">Send Transaction</span></button>
+          <button class="btn btn-sec" onclick="loadQuickSample()">Load sample</button>
         </div>
       </div>
-      <div class="card" style="display:none" id="st-res-card">
-        <div class="card-title">Transaction Result</div>
-        <div id="st-res"></div>
+
+      <div class="section-card" style="display:none" id="st-result-card">
+        <div class="sc-title" style="display:flex;justify-content:space-between">
+          <span>Evaluation Result</span>
+          <span id="st-tx-hash" class="mono" style="font-size:10px;color:var(--t3)"></span>
+        </div>
+        <div id="st-result"></div>
       </div>
     </div>
 
     <div>
-      <div class="card"><div class="card-title">Samples</div>
+      <div class="section-card">
+        <div class="sc-title">Sample Tweets</div>
         ${SAMPLES.map((s,i)=>`
-        <div class="sample-item" onclick="loadSampleN(${i})">
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+        <div onclick="loadSampleN(${i})" style="cursor:pointer;padding:9px;background:var(--bg);border:1px solid var(--border);border-radius:7px;margin-bottom:6px;transition:border-color .12s" onmouseover="this.style.borderColor='rgba(124,58,237,.4)'" onmouseout="this.style.borderColor='var(--border)'">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">
             <span class="badge ${CATMAP[s.cat]||'b-edu'}">${s.cat}</span>
             <span style="font-size:10px;color:var(--t3)">${s.hint}</span>
           </div>
-          <div style="font-size:11.5px;color:var(--t2);line-height:1.5">${s.text.slice(0,80)}…</div>
+          <div style="font-size:11.5px;color:var(--t2);line-height:1.5">${s.text.slice(0,90)}${s.text.length>90?'…':''}</div>
         </div>`).join('')}
       </div>
+
+      <div class="section-card">
+        <div class="sc-title">Profile Preview</div>
+        <div id="profile-preview-mini"></div>
+      </div>
     </div>
-  </div>`;
-
-  // init counter
-  document.getElementById('st-cnt').textContent = document.getElementById('st-text').value.length + ' ch';
-
-  document.getElementById('st-btn').onclick = async () => {
-    const url = document.getElementById('st-url').value.trim();
-    const text = document.getElementById('st-text').value.trim();
-    const prof = document.getElementById('st-profile')?.value || document.getElementById('st-prof').value;
-    if (!url||!text) { toast('URL и текст обязательны','red'); return; }
-
-    const btn = document.getElementById('st-btn');
-    btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Sending…';
-
-    try {
-      const fn = prof ? 'submit_tweet' : 'submit_tweet_default';
-      const args = prof ? [url, text, prof] : [url, text];
-      const txHash = await glWrite(fn, args);
-
-      btn.innerHTML = '<span class="spinner"></span> Waiting consensus…';
-      const card = document.getElementById('st-res-card');
-      card.style.display='block';
-      document.getElementById('st-res').innerHTML = `<div class="tx-box">
-        TX: <a href="${EXPLORER}${txHash}" target="_blank">${txHash}</a><br>
-        <div class="loading" style="padding:8px 0"><span class="spinner"></span> Validators evaluating…</div></div>`;
-
-      await glWait(txHash);
-
-      // fetch latest eval
-      const count = await glRead('get_count');
-      if (count > 0) {
-        const ev = await glRead('get_evaluation', [count - 1]);
-        document.getElementById('st-res').innerHTML = buildResult(typeof ev==='string'?JSON.parse(ev):ev, txHash);
-      } else {
-        document.getElementById('st-res').innerHTML = `<div class="tx-box" style="border-color:rgba(16,185,129,.3);color:var(--green)">
-          ✓ Finalized · <a href="${EXPLORER}${txHash}" target="_blank">${txHash}</a></div>`;
-      }
-      toast('Submitted ✓','green');
-    } catch(e) {
-      document.getElementById('st-res-card').style.display='block';
-      document.getElementById('st-res').innerHTML = `<div style="color:var(--red);padding:10px;background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.2);border-radius:7px">${e.message}</div>`;
-      toast(e.message,'red');
-    }
-    btn.disabled=false; btn.textContent='Send Transaction';
-  };
+  </div>`
+  updateStCounter()
+  updateProfilePreviewMini()
+  document.getElementById('st-profile').addEventListener('change',updateProfilePreviewMini)
 }
 
-window.loadSampleN = (i) => {
-  const s = SAMPLES[i];
-  document.getElementById('st-url').value = s.url;
-  document.getElementById('st-text').value = s.text;
-  document.getElementById('st-cnt').textContent = s.text.length + ' ch';
-};
-window.loadSampleRnd = () => loadSampleN(Math.floor(Math.random()*SAMPLES.length));
+const SAMPLES=[
+  {url:'https://x.com/researcher/status/001',text:"Deep dive into GenLayer's Equivalence Principle — heterogeneous AI validators reaching deterministic consensus. Full benchmark data + formal analysis. 10M test cases, zero failures. 🧵",cat:'research',hint:'High score · research'},
+  {url:'https://x.com/genlayer/status/002',text:"🚀 GenLayer Testnet Update: 394 validators running Intelligent Contracts. Optimistic Democracy consensus time down 40% vs last month. Stability under adversarial conditions confirmed.",cat:'community',hint:'Community · GenLayer-specific'},
+  {url:'https://x.com/builder/status/003',text:"Tutorial: How to deploy your first Intelligent Contract on GenLayer. Covers GenVM setup, Equivalence Principle basics, and validator configuration. Link:",cat:'educational',hint:'Educational · tutorial'},
+  {url:'https://x.com/memer/status/004',text:"GenLayer validators when the tweet is slightly ambiguous 😭😭 [three validators arguing speech bubbles: APPROVED / REJECTED / idk lol]",cat:'meme',hint:'Meme · banned in strict'},
+  {url:'https://x.com/fudder/status/005',text:"GenLayer is vaporware. No real users, no real validators. 'Equivalence Principle' is marketing BS. Team dumping tokens while retail gets rekt. DYOR.",cat:'fud',hint:'FUD · hard reject'},
+  {url:'https://x.com/spambot/status/006',text:"🚨 FREE TOKENS 🚨 Follow + RT + comment your wallet. GenLayer airdrop NOW. Limited 1000 spots. HURRY!!!! 💰💰💰",cat:'spam',hint:'Spam · hard reject'},
+]
 
-function buildResult(ev, txHash) {
-  if (!ev) return '<div style="color:var(--t3)">No result data</div>';
-  const ok = ev.verdict==='approved';
-  const sc = ev.total_score||0;
-  const sc_c = sc>=70?'var(--green)':sc>=45?'var(--amber)':'var(--red)';
-  const dims = ev.dimensions||{};
-  const dimKeys = ['relevance','technical_accuracy','originality','tone_quality','engagement_potential'];
-  const dimNames = ['Relevance','Technical','Originality','Tone','Engagement'];
-  const dimColors = ['#60a5fa','#34d399','#a78bfa','#fbbf24','#f87171'];
-  return `
-  <div class="verdict-box ${ok?'vb-ok':'vb-no'}">
+function loadSampleN(i){
+  const s=SAMPLES[i]
+  document.getElementById('st-url').value=s.url
+  document.getElementById('st-text').value=s.text
+  updateStCounter()
+}
+function loadQuickSample(){loadSampleN(Math.floor(Math.random()*SAMPLES.length))}
+
+function updateStCounter(){
+  const t=document.getElementById('st-text')
+  if(!t)return
+  const c=document.getElementById('st-counter')
+  if(!c)return
+  c.textContent=t.value.length+' chars'
+  c.style.color=t.value.length>280?'var(--red)':'var(--t3)'
+}
+
+function updateProfilePreviewMini(){
+  const sel=document.getElementById('st-profile')
+  if(!sel)return
+  const pname=sel.value||STATE.defaultProfile
+  const p=PROFILES[pname]
+  const el=document.getElementById('profile-preview-mini')
+  if(!el)return
+  el.innerHTML=`
+  <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px">
+    <span style="width:8px;height:8px;border-radius:50%;background:${p.color}"></span>
+    <span style="font-weight:600;text-transform:capitalize;color:var(--t1)">${p.name}</span>
+    <span style="font-size:10px;color:var(--t3)">threshold: ${p.threshold}</span>
+  </div>
+  <div class="wstrip">${DIMS.map(d=>`<div class="wseg" style="width:${p.weights[d]}%;background:${DCOLORS[d]}">${p.weights[d]>10?p.weights[d]:''}</div>`).join('')}</div>
+  <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px">
+    ${DIMS.map(d=>`<span style="font-size:10px;color:var(--t3)">${d.slice(0,3)}: <span style="color:${DCOLORS[d]}">${p.weights[d]}%</span></span>`).join(' · ')}
+  </div>
+  <div style="margin-top:8px;font-size:10.5px;color:var(--red)">Banned: <span class="mono">${p.banned.join(', ')}</span></div>
+  <div style="font-size:10.5px;color:var(--t3);margin-top:3px">Min Tech: ${p.minTech} · Min Tone: ${p.minTone}</div>`
+}
+
+async function doSubmitTweet(){
+  const url=document.getElementById('st-url').value.trim()
+  const text=document.getElementById('st-text').value.trim()
+  const pname=document.getElementById('st-profile').value||STATE.defaultProfile
+  if(!url||!text){showToast('URL and tweet text are required','red');return}
+  const btn=document.getElementById('st-btn')
+  const lbl=document.getElementById('st-btn-lbl')
+  btn.disabled=true
+  lbl.innerHTML='<span class="spinner"></span> Evaluating…'
+  await sleep(900)
+  const p=PROFILES[pname]
+  const {dims,cat}=scoreTweet(text)
+  await sleep(400)
+  const result=applyProfile(dims,cat,p)
+  const id=genId(url,'0x'+Math.random().toString(16).slice(2,10))
+  const entry={eval_id:id,url,text,submitter:'0xUSER',timestamp:Math.floor(Date.now()/1000),
+    profile:pname,dimensions:dims,total_score:result.score,verdict:result.verdict,
+    category:cat,confidence:result.confidence,feedback:getFeedback(cat,result.verdict,dims),
+    hard_rule_triggered:result.hardRule||''}
+  STATE.evaluations.unshift(entry)
+  btn.disabled=false; lbl.textContent='Send Transaction'
+  const card=document.getElementById('st-result-card')
+  card.style.display='block'
+  document.getElementById('st-tx-hash').textContent='TX: 0x'+Math.random().toString(16).slice(2,18)+'...'
+  document.getElementById('st-result').innerHTML=buildResultHTML(entry,p)
+  showToast(`Evaluated · ${result.verdict.toUpperCase()} · score: ${result.score}`,result.verdict==='approved'?'green':'red')
+}
+
+function buildResultHTML(entry,p){
+  const isApproved=entry.verdict==='approved'
+  const sc=entry.total_score
+  const sc_color=sc>=70?'var(--green)':sc>=45?'var(--amber)':'var(--red)'
+  return`
+  <div class="result-verdict ${isApproved?'rv-approved':'rv-rejected'}">
     <div>
-      <div class="v-badge ${ok?'vb-appr':'vb-rejt'}">${ok?'✓ APPROVED':'✗ REJECTED'}</div>
-      <div class="v-score" style="color:${sc_c};margin-top:7px">${sc}<span style="font-size:16px;font-weight:400;color:var(--t3)">/100</span></div>
-      <div style="font-size:10px;color:var(--t3);margin-top:2px">profile: ${ev.profile||'—'}</div>
+      <div class="rv-badge ${isApproved?'vb-approved':'vb-rejected'}">${isApproved?'✓ APPROVED':'✗ REJECTED'}</div>
+      <div class="rv-score" style="color:${sc_color};margin-top:8px">${sc}<span style="font-size:18px;font-weight:400;color:var(--t3)">/100</span></div>
+      <div style="font-size:10.5px;color:var(--t3);margin-top:3px">threshold: ${p.threshold} · profile: ${entry.profile}</div>
     </div>
-    <div style="margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:5px">
-      <span class="badge ${CATMAP[ev.category]||'b-edu'}">${ev.category||'—'}</span>
-      <span style="font-size:10px;color:var(--t3)">${ev.confidence||'—'}</span>
+    <div style="margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+      <span class="badge ${CATMAP[entry.category]||'b-edu'}">${entry.category}</span>
+      <span style="font-size:10.5px;color:${entry.confidence==='high'?'var(--green)':entry.confidence==='medium'?'var(--amber)':'var(--red)'}">▲ ${entry.confidence}</span>
     </div>
   </div>
-  ${ev.hard_rule_triggered?`<div class="hard-rule"><div class="hr-title">Hard Rule</div><div class="hr-val">${ev.hard_rule_triggered}</div></div>`:''}
-  ${dimKeys.map((k,i)=>{const v=dims[k]||0;const c=v>=70?'var(--green)':v>=40?'var(--amber)':'var(--red)';return`
-  <div class="dim-row">
-    <div class="dim-top"><span>${dimNames[i]}</span><span class="mono" style="color:${c}">${v}</span></div>
-    <div class="dim-track"><div class="dim-fill" style="width:${v}%;background:${c}"></div></div>
+  ${entry.hard_rule_triggered?`<div class="hard-rule"><div class="hard-rule-title">Hard Rule Triggered</div><div class="hard-rule-val">${entry.hard_rule_triggered}</div></div>`:''}
+  ${DIMS.map(d=>{const v=entry.dimensions[d];const c=v>=70?'var(--green)':v>=40?'var(--amber)':'var(--red)';return`
+  <div class="dim-bar-row">
+    <div class="dim-bar-top"><span class="dim-bar-lbl">${DLABELS[d]}</span>
+    <div style="display:flex;gap:8px"><span style="font-size:10px;color:var(--t3)">${p.weights[d]}% weight</span><span class="mono" style="color:${c}">${v}</span></div></div>
+    <div class="dim-bar-track"><div class="dim-bar-fill" style="width:${v}%;background:${c}"></div></div>
   </div>`}).join('')}
-  <div style="background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:9px;margin-top:9px">
-    <div style="font-size:9.5px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">AI Feedback</div>
-    <div style="font-size:12px;color:var(--t2);line-height:1.6">${ev.feedback||'—'}</div>
+  <div style="background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:10px;margin-top:10px">
+    <div style="font-size:9.5px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">AI Feedback</div>
+    <div style="font-size:12px;color:var(--t2);line-height:1.6">${entry.feedback}</div>
   </div>
-  <div class="tx-box" style="margin-top:9px">
-    Eval ID: <span style="color:var(--t1)">${ev.eval_id||'—'}</span><br>
-    TX: <a href="${EXPLORER}${txHash}" target="_blank">${txHash}</a>
-  </div>`;
+  <div style="margin-top:8px">
+    <div style="font-size:9.5px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">Eval ID</div>
+    <div class="mono" style="font-size:10.5px;color:var(--t3);word-break:break-all">${entry.eval_id}</div>
+  </div>`
 }
 
-// ═══════════════════════════════════════════
-// SUBMIT DEFAULT
-// ═══════════════════════════════════════════
-function renderSubmitDefault() {
-  const rp = document.getElementById('right-pane');
-  rp.innerHTML = `
-  <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
-    <span class="sb-tag w">Write</span><div class="pane-title" style="margin:0">submit_tweet_default</div></div>
-  <div class="pane-sub">Uses contract's default profile</div>
-  <div class="card">
-    <div class="field"><label>tweet_url</label><input class="fi" id="sd-url" value="https://x.com/genlayer/status/9999"></div>
-    <div class="field"><label>tweet_text</label><textarea class="fi" id="sd-text" rows="5">GenLayer just hit 4.7K contributions! The community is growing — builders, validators, researchers all contributing. 🚀</textarea></div>
-    <div class="field"><label>Private Key (опционально)</label><input class="fi" type="password" id="sender-pk" placeholder="0x…"></div>
-    <button class="btn btn-p btn-full" style="margin-top:8px" id="sd-btn">Send Transaction</button>
+// ════════════════════════════════════════════════════════
+// SUBMIT TWEET DEFAULT
+// ════════════════════════════════════════════════════════
+function renderSubmitTweetDefault(){
+  const rp=document.getElementById('right-pane')
+  rp.innerHTML=`
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span class="sb-tag write">Write</span><div class="pane-title" style="margin:0">submit_tweet_default</div></div>
+  <div class="pane-sub">Submit using the default profile (currently: <strong>${STATE.defaultProfile}</strong>)</div>
+  <div class="section-card">
+    <div class="sc-title">Parameters</div>
+    <div class="field"><label>tweet_url</label><input class="fi" id="std-url" placeholder="https://x.com/user/status/..." value="https://x.com/genlayer/status/9999"></div>
+    <div class="field"><label>tweet_text</label><textarea class="fi" id="std-text" rows="5" placeholder="Paste tweet text here...">GenLayer just hit 4.7K contributions submitted! The community is growing fast — builders, validators, researchers all contributing to the ecosystem. 🚀</textarea></div>
+    <div style="margin-top:12px;display:flex;gap:8px">
+      <button class="btn btn-primary" id="std-btn" onclick="doSubmitDefault()"><span id="std-lbl">Send Transaction</span></button>
+    </div>
   </div>
-  <div class="card" style="display:none" id="sd-res-card"><div class="card-title">Result</div><div id="sd-res"></div></div>`;
-  document.getElementById('sd-btn').onclick = async () => {
-    const url=document.getElementById('sd-url').value.trim();
-    const text=document.getElementById('sd-text').value.trim();
-    if(!url||!text){toast('Fill all fields','red');return;}
-    const btn=document.getElementById('sd-btn');btn.disabled=true;btn.innerHTML='<span class="spinner"></span>';
-    try {
-      const txHash=await glWrite('submit_tweet_default',[url,text]);
-      document.getElementById('sd-res-card').style.display='block';
-      document.getElementById('sd-res').innerHTML=`<div class="tx-box">TX: <a href="${EXPLORER}${txHash}" target="_blank">${txHash}</a><br>
-        <div class="loading" style="padding:8px 0"><span class="spinner"></span> Waiting…</div></div>`;
-      await glWait(txHash);
-      const count=await glRead('get_count');
-      if(count>0){const ev=await glRead('get_evaluation',[count-1]);document.getElementById('sd-res').innerHTML=buildResult(typeof ev==='string'?JSON.parse(ev):ev,txHash);}
-      toast('Done ✓','green');
-    } catch(e){document.getElementById('sd-res-card').style.display='block';document.getElementById('sd-res').innerHTML=`<span style="color:var(--red)">${e.message}</span>`;toast(e.message,'red');}
-    btn.disabled=false;btn.textContent='Send Transaction';
-  };
+  <div class="section-card" style="display:none" id="std-result-card"><div class="sc-title">Result</div><div id="std-result"></div></div>`
 }
 
-// ═══════════════════════════════════════════
-// WRITE HELPERS (generic)
-// ═══════════════════════════════════════════
-function renderWrite(fn, fieldsHTML, getArgs) {
-  const rp = document.getElementById('right-pane');
-  rp.innerHTML = `
-  <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
-    <span class="sb-tag w">Write</span><div class="pane-title" style="margin:0">${fn}</div></div>
-  <div class="pane-sub">Owner-only write method</div>
-  <div class="card">${fieldsHTML}
-    <div class="field" style="margin-top:8px"><label>Private Key (опционально)</label><input class="fi" type="password" id="sender-pk" placeholder="0x…"></div>
-    <button class="btn btn-p btn-full" style="margin-top:8px" id="wr-btn">Send Transaction</button>
+async function doSubmitDefault(){
+  const url=document.getElementById('std-url').value.trim()
+  const text=document.getElementById('std-text').value.trim()
+  if(!url||!text){showToast('Fill in all fields','red');return}
+  const btn=document.getElementById('std-btn'); btn.disabled=true
+  document.getElementById('std-lbl').innerHTML='<span class="spinner"></span>'
+  await sleep(800)
+  const p=PROFILES[STATE.defaultProfile]
+  const {dims,cat}=scoreTweet(text)
+  const result=applyProfile(dims,cat,p)
+  const entry={eval_id:genId(url,'0xDEF'+Math.random().toString(16).slice(2,6)),url,text,
+    submitter:'0xUSER',timestamp:Math.floor(Date.now()/1000),
+    profile:STATE.defaultProfile,dimensions:dims,total_score:result.score,
+    verdict:result.verdict,category:cat,confidence:result.confidence,
+    feedback:getFeedback(cat,result.verdict,dims),hard_rule_triggered:result.hardRule||''}
+  STATE.evaluations.unshift(entry)
+  btn.disabled=false; document.getElementById('std-lbl').textContent='Send Transaction'
+  const card=document.getElementById('std-result-card'); card.style.display='block'
+  document.getElementById('std-result').innerHTML=buildResultHTML(entry,p)
+}
+
+// ════════════════════════════════════════════════════════
+// ADMIN OVERRIDE
+// ════════════════════════════════════════════════════════
+function renderAdminOverride(){
+  const rp=document.getElementById('right-pane')
+  rp.innerHTML=`
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span class="sb-tag write">Write</span><div class="pane-title" style="margin:0">admin_override</div></div>
+  <div class="pane-sub">Owner-only · Override the verdict of an existing evaluation</div>
+  <div class="section-card">
+    <div class="sc-title">Parameters</div>
+    <div class="field"><label>eval_id</label><select class="fi" id="ao-id">${STATE.evaluations.map(e=>`<option value="${e.eval_id}">${e.eval_id} [${e.verdict}]</option>`).join('')||'<option>No evaluations yet</option>'}</select></div>
+    <div class="field"><label>new_verdict</label><select class="fi" id="ao-verdict"><option value="approved">approved</option><option value="rejected">rejected</option><option value="needs_review">needs_review</option></select></div>
+    <div class="field"><label>reason</label><input class="fi" id="ao-reason" placeholder="Reason for override..."></div>
+    <button class="btn btn-danger btn-full" style="margin-top:10px" id="ao-btn" onclick="doAdminOverride()"><span id="ao-lbl">Apply Override</span></button>
   </div>
-  <div class="card" style="display:none" id="wr-res"><div class="card-title">Result</div><div id="wr-out"></div></div>`;
-  document.getElementById('wr-btn').onclick = async () => {
-    const btn=document.getElementById('wr-btn');btn.disabled=true;btn.innerHTML='<span class="spinner"></span>';
-    try {
-      const args = getArgs();
-      const txHash = await glWrite(fn, args);
-      document.getElementById('wr-res').style.display='block';
-      document.getElementById('wr-out').innerHTML=`<div class="tx-box" style="border-color:rgba(16,185,129,.3)">✓ TX: <a href="${EXPLORER}${txHash}" target="_blank">${txHash}</a></div>`;
-      toast('Transaction sent ✓','green');
-    } catch(e){document.getElementById('wr-res').style.display='block';document.getElementById('wr-out').innerHTML=`<span style="color:var(--red)">${e.message}</span>`;toast(e.message,'red');}
-    btn.disabled=false;btn.textContent='Send Transaction';
-  };
+  <div style="display:none" id="ao-result-card" class="section-card"><div class="sc-title">Result</div><div id="ao-result"></div></div>`
 }
 
-function renderAdminOverride() {
-  renderWrite('admin_override',`
-    <div class="field"><label>eval_id</label><input class="fi" id="ao-id" placeholder="paste eval_id"></div>
-    <div class="field"><label>new_verdict</label><select class="fi" id="ao-v"><option>approved</option><option>rejected</option><option>needs_review</option></select></div>
-    <div class="field"><label>reason</label><input class="fi" id="ao-r" placeholder="Reason…"></div>`,
-    () => [document.getElementById('ao-id').value, document.getElementById('ao-v').value, document.getElementById('ao-r').value]);
+async function doAdminOverride(){
+  const id=document.getElementById('ao-id').value
+  const verdict=document.getElementById('ao-verdict').value
+  const reason=document.getElementById('ao-reason').value.trim()
+  if(!id||!reason){showToast('All fields required','red');return}
+  const btn=document.getElementById('ao-btn'); btn.disabled=true
+  document.getElementById('ao-lbl').innerHTML='<span class="spinner"></span>'
+  await sleep(600)
+  const e=STATE.evaluations.find(x=>x.eval_id===id)
+  if(e){const old=e.verdict; e.verdict=verdict; e.feedback=`[ADMIN OVERRIDE] ${reason} | Original: ${e.feedback}`
+    STATE.overrides.push({eval_id:id,reason,by:'0xOWNER',old_verdict:old,new_verdict:verdict})}
+  btn.disabled=false; document.getElementById('ao-lbl').textContent='Apply Override'
+  const card=document.getElementById('ao-result-card'); card.style.display='block'
+  document.getElementById('ao-result').innerHTML=`<div class="alert-box" style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.25);border-radius:7px;padding:10px 12px;font-size:12px;color:#4ade80">✓ Override applied · Eval ID: <span class="mono">${id}</span> → <strong>${verdict}</strong></div>`
+  showToast('Override applied','green')
 }
 
-function renderSetWeights() {
-  renderWrite('set_profile_weights',`
-    <div class="field"><label>name</label><select class="fi" id="sw-n"><option>lenient</option><option selected>moderate</option><option>strict</option></select></div>
-    ${['relevance','technical','originality','tone','engagement'].map(d=>`
-    <div class="field"><label>w_${d}</label><input class="fi" type="number" min="0" max="100" id="sw-${d}" value="20" oninput="updateSum()"></div>`).join('')}
-    <div id="sw-sum" style="font-size:12px;color:var(--t3);margin-top:2px">Sum: 100</div>`,
-    () => {
-      const w=['relevance','technical','originality','tone','engagement'].map(d=>parseInt(document.getElementById('sw-'+d).value||0));
-      if(w.reduce((a,b)=>a+b,0)!==100) throw new Error('Weights must sum to 100');
-      return [document.getElementById('sw-n').value,...w];
-    });
-  window.updateSum = () => {
-    const s=['relevance','technical','originality','tone','engagement'].reduce((a,d)=>a+parseInt(document.getElementById('sw-'+d)?.value||0),0);
-    const el=document.getElementById('sw-sum');if(el){el.textContent='Sum: '+s+(s===100?' ✓':' ✕');el.style.color=s===100?'var(--green)':'var(--red)';}
-  };
+// ════════════════════════════════════════════════════════
+// SET PROFILE WEIGHTS
+// ════════════════════════════════════════════════════════
+function renderSetProfileWeights(){
+  const rp=document.getElementById('right-pane')
+  rp.innerHTML=`
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span class="sb-tag write">Write</span><div class="pane-title" style="margin:0">set_profile_weights</div></div>
+  <div class="pane-sub">Owner-only · Update weights for a profile (must sum to 100)</div>
+  <div style="display:grid;grid-template-columns:1fr 280px;gap:14px;align-items:start">
+    <div class="section-card">
+      <div class="sc-title">Parameters</div>
+      <div class="field"><label>name</label><select class="fi" id="spw-name" onchange="spwUpdatePreview()">${Object.keys(PROFILES).map(n=>`<option>${n}</option>`).join('')}</select></div>
+      ${DIMS.map(d=>`
+      <div class="field"><label>${d} weight (w_${d})</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input class="fi" type="range" min="0" max="100" step="1" id="spw-${d}" value="${PROFILES.lenient.weights[d]}" oninput="spwUpdatePreview();document.getElementById('spwv-${d}').textContent=this.value" style="flex:1">
+          <span class="mono" id="spwv-${d}" style="width:28px;color:${DCOLORS[d]}">${PROFILES.lenient.weights[d]}</span>
+        </div>
+      </div>`).join('')}
+      <div id="spw-sum" class="sum-ind" style="padding:7px 10px;border-radius:6px;font-size:12px;font-family:'JetBrains Mono',monospace;margin-top:4px"></div>
+      <button class="btn btn-primary btn-full" style="margin-top:12px" id="spw-btn" onclick="doSetWeights()"><span id="spw-lbl">Send Transaction</span></button>
+    </div>
+    <div class="section-card">
+      <div class="sc-title">Weight strip</div>
+      <div class="wstrip" id="spw-strip"></div>
+      <div style="display:flex;flex-direction:column;gap:5px;margin-top:10px" id="spw-legend"></div>
+    </div>
+  </div>`
+  spwUpdatePreview()
+  document.getElementById('spw-name').addEventListener('change',()=>{
+    const n=document.getElementById('spw-name').value
+    const p=PROFILES[n]
+    DIMS.forEach(d=>{document.getElementById('spw-'+d).value=p.weights[d];document.getElementById('spwv-'+d).textContent=p.weights[d]})
+    spwUpdatePreview()
+  })
 }
 
-function renderSetThreshold() {
-  renderWrite('set_profile_threshold',`
-    <div class="field"><label>name</label><select class="fi" id="st2-n"><option>lenient</option><option selected>moderate</option><option>strict</option></select></div>
-    <div class="field"><label>threshold (0–100)</label><input class="fi" type="number" min="0" max="100" id="st2-v" value="55"></div>`,
-    () => [document.getElementById('st2-n').value, parseInt(document.getElementById('st2-v').value)]);
+function spwUpdatePreview(){
+  const vals={};let sum=0
+  DIMS.forEach(d=>{vals[d]=parseInt(document.getElementById('spw-'+d)?.value||0);sum+=vals[d]})
+  const sumEl=document.getElementById('spw-sum')
+  if(sumEl){sumEl.textContent=`Sum: ${sum}${sum===100?' ✓':' — must equal 100'}`;sumEl.style.cssText=`padding:7px 10px;border-radius:6px;font-size:12px;font-family:'JetBrains Mono',monospace;border:1px solid;${sum===100?'background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.25);color:#4ade80':'background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.25);color:#f87171'}`}
+  const strip=document.getElementById('spw-strip')
+  if(strip) strip.innerHTML=DIMS.map(d=>`<div class="wseg" style="width:${vals[d]}%;background:${DCOLORS[d]};min-width:${vals[d]>0?'8px':'0'}">${vals[d]>12?vals[d]:''}</div>`).join('')
+  const leg=document.getElementById('spw-legend')
+  if(leg) leg.innerHTML=DIMS.map(d=>`<div style="display:flex;align-items:center;gap:6px;font-size:11.5px"><span style="width:8px;height:8px;border-radius:2px;background:${DCOLORS[d]};flex-shrink:0"></span><span style="color:var(--t2);flex:1">${DLABELS[d]}</span><span class="mono" style="color:${DCOLORS[d]}">${vals[d]}%</span></div>`).join('')
 }
 
-function renderSetRules() {
-  renderWrite('set_profile_rules',`
-    <div class="field"><label>name</label><select class="fi" id="sr-n"><option>lenient</option><option selected>moderate</option><option>strict</option></select></div>
-    <div class="field"><label>banned_categories (comma-separated)</label><input class="fi" id="sr-b" value="spam,fud"></div>
+async function doSetWeights(){
+  const vals={};let sum=0
+  DIMS.forEach(d=>{vals[d]=parseInt(document.getElementById('spw-'+d).value||0);sum+=vals[d]})
+  if(sum!==100){showToast('Weights must sum to 100','red');return}
+  const n=document.getElementById('spw-name').value
+  const btn=document.getElementById('spw-btn');btn.disabled=true
+  document.getElementById('spw-lbl').innerHTML='<span class="spinner"></span>'
+  await sleep(500)
+  DIMS.forEach(d=>PROFILES[n].weights[d]=vals[d])
+  btn.disabled=false;document.getElementById('spw-lbl').textContent='Send Transaction'
+  showToast(`Profile "${n}" weights updated ✓`,'green')
+}
+
+// ════════════════════════════════════════════════════════
+// SET PROFILE THRESHOLD
+// ════════════════════════════════════════════════════════
+function renderSetProfileThreshold(){
+  const rp=document.getElementById('right-pane')
+  rp.innerHTML=`
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span class="sb-tag write">Write</span><div class="pane-title" style="margin:0">set_profile_threshold</div></div>
+  <div class="pane-sub">Owner-only · Set minimum score for approval</div>
+  <div class="section-card">
+    <div class="sc-title">Parameters</div>
+    <div class="field"><label>name</label><select class="fi" id="spt-name">${Object.keys(PROFILES).map(n=>`<option>${n}</option>`).join('')}</select></div>
+    <div class="field"><label>threshold (u8, 0–100)</label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="range" class="fi" min="0" max="100" id="spt-val" value="55" oninput="document.getElementById('spt-display').textContent=this.value" style="flex:1">
+        <span class="mono" id="spt-display" style="width:28px;font-size:16px;color:var(--acc2)">55</span>
+      </div>
+    </div>
+    <button class="btn btn-primary btn-full" style="margin-top:12px" onclick="doSetThreshold()">Send Transaction</button>
+  </div>`
+  // pre-fill with current profile
+  document.getElementById('spt-name').addEventListener('change',()=>{
+    const n=document.getElementById('spt-name').value
+    document.getElementById('spt-val').value=PROFILES[n].threshold
+    document.getElementById('spt-display').textContent=PROFILES[n].threshold
+  })
+}
+
+async function doSetThreshold(){
+  const n=document.getElementById('spt-name').value
+  const v=parseInt(document.getElementById('spt-val').value)
+  await sleep(400); PROFILES[n].threshold=v
+  showToast(`Threshold for "${n}" set to ${v}`,'green')
+}
+
+// ════════════════════════════════════════════════════════
+// SET PROFILE RULES
+// ════════════════════════════════════════════════════════
+function renderSetProfileRules(){
+  const rp=document.getElementById('right-pane')
+  rp.innerHTML=`
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span class="sb-tag write">Write</span><div class="pane-title" style="margin:0">set_profile_rules</div></div>
+  <div class="pane-sub">Owner-only · Set banned categories and minimum floors</div>
+  <div class="section-card">
+    <div class="sc-title">Parameters</div>
+    <div class="field"><label>name</label><select class="fi" id="spr-name" onchange="sprLoad()">${Object.keys(PROFILES).map(n=>`<option>${n}</option>`).join('')}</select></div>
+    <div class="field"><label>banned_categories (comma-separated)</label><input class="fi" id="spr-banned" placeholder="spam,fud,shill,meme" value="${PROFILES.lenient.banned.join(',')}"></div>
     <div class="g2">
-      <div class="field"><label>min_technical</label><input class="fi" type="number" id="sr-t" value="20"></div>
-      <div class="field"><label>min_tone</label><input class="fi" type="number" id="sr-tone" value="25"></div>
-    </div>`,
-    () => [document.getElementById('sr-n').value, document.getElementById('sr-b').value, parseInt(document.getElementById('sr-t').value), parseInt(document.getElementById('sr-tone').value)]);
+      <div class="field"><label>min_technical (u8)</label><input class="fi" type="number" min="0" max="100" id="spr-tech" value="${PROFILES.lenient.minTech}"></div>
+      <div class="field"><label>min_tone (u8)</label><input class="fi" type="number" min="0" max="100" id="spr-tone" value="${PROFILES.lenient.minTone}"></div>
+    </div>
+    <button class="btn btn-primary btn-full" style="margin-top:12px" onclick="doSetRules()">Send Transaction</button>
+  </div>`
 }
 
-function renderSetDefault() {
-  renderWrite('set_default_profile',`
-    <div class="field"><label>name</label><select class="fi" id="sdp-n"><option>lenient</option><option selected>moderate</option><option>strict</option></select></div>`,
-    () => [document.getElementById('sdp-n').value]);
+function sprLoad(){
+  const n=document.getElementById('spr-name').value, p=PROFILES[n]
+  document.getElementById('spr-banned').value=p.banned.join(',')
+  document.getElementById('spr-tech').value=p.minTech
+  document.getElementById('spr-tone').value=p.minTone
 }
 
-function renderTogglePause() {
-  renderWrite('toggle_pause', `<div style="font-size:12px;color:var(--t3);margin-bottom:8px">Toggles pause state. Check Overview → Config for current status.</div>`,
-    () => []);
-  // override btn style
-  setTimeout(()=>{const b=document.getElementById('wr-btn');if(b){b.className='btn btn-d btn-full';b.textContent='Toggle Pause';}},50);
+async function doSetRules(){
+  const n=document.getElementById('spr-name').value
+  const banned=document.getElementById('spr-banned').value.split(',').map(s=>s.trim()).filter(Boolean)
+  const minTech=parseInt(document.getElementById('spr-tech').value)
+  const minTone=parseInt(document.getElementById('spr-tone').value)
+  await sleep(400)
+  PROFILES[n].banned=banned; PROFILES[n].minTech=minTech; PROFILES[n].minTone=minTone
+  showToast(`Rules for "${n}" updated ✓`,'green')
 }
 
-// ═══════════════════════════════════════════
-// UTILS
-// ═══════════════════════════════════════════
-function toast(msg, type) {
-  const t = document.getElementById('toast');
-  t.style.display='block';
-  t.style.color = type==='green'?'#4ade80':type==='red'?'#f87171':'var(--t2)';
-  t.textContent = msg;
-  clearTimeout(window.__tt);
-  window.__tt = setTimeout(()=>t.style.display='none', 3200);
+// ════════════════════════════════════════════════════════
+// SET PROFILE DESCRIPTION
+// ════════════════════════════════════════════════════════
+function renderSetProfileDescription(){
+  const rp=document.getElementById('right-pane')
+  rp.innerHTML=`
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span class="sb-tag write">Write</span><div class="pane-title" style="margin:0">set_profile_description</div></div>
+  <div class="pane-sub">Owner-only · Update a profile's description text</div>
+  <div class="section-card">
+    <div class="sc-title">Parameters</div>
+    <div class="field"><label>name</label><select class="fi" id="spd-name" onchange="document.getElementById('spd-desc').value=PROFILES[this.value].desc">${Object.keys(PROFILES).map(n=>`<option>${n}</option>`).join('')}</select></div>
+    <div class="field"><label>description</label><textarea class="fi" id="spd-desc" rows="3">${PROFILES.lenient.desc}</textarea></div>
+    <button class="btn btn-primary btn-full" style="margin-top:12px" onclick="doSetDesc()">Send Transaction</button>
+  </div>`
+}
+async function doSetDesc(){
+  const n=document.getElementById('spd-name').value
+  PROFILES[n].desc=document.getElementById('spd-desc').value
+  await sleep(300); showToast(`Description for "${n}" updated`,'green')
 }
 
-window.copyText = (s) => navigator.clipboard.writeText(s).then(()=>toast('Copied!'));
+// ════════════════════════════════════════════════════════
+// SET DEFAULT PROFILE
+// ════════════════════════════════════════════════════════
+function renderSetDefaultProfile(){
+  const rp=document.getElementById('right-pane')
+  rp.innerHTML=`
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span class="sb-tag write">Write</span><div class="pane-title" style="margin:0">set_default_profile</div></div>
+  <div class="pane-sub">Owner-only · Change which profile is used by submit_tweet_default</div>
+  <div class="section-card">
+    <div class="sc-title">Parameters</div>
+    <div class="field"><label>name</label><select class="fi" id="sdp-name">${Object.keys(PROFILES).map(n=>`<option ${n===STATE.defaultProfile?'selected':''}>${n}</option>`).join('')}</select></div>
+    <div style="margin-top:10px;font-size:12px;color:var(--t3)">Current default: <span class="mono" style="color:var(--acc2)">${STATE.defaultProfile}</span></div>
+    <button class="btn btn-primary btn-full" style="margin-top:12px" onclick="doSetDefault()">Send Transaction</button>
+  </div>`
+}
+async function doSetDefault(){
+  const n=document.getElementById('sdp-name').value
+  await sleep(300)
+  Object.values(PROFILES).forEach(p=>p.isDefault=false)
+  PROFILES[n].isDefault=true; STATE.defaultProfile=n
+  showToast(`Default profile set to "${n}"`,'green')
+}
 
-// expose globals
-window.toast = toast;
-window.renderOverview = renderOverview;
+// ════════════════════════════════════════════════════════
+// TOGGLE PAUSE
+// ════════════════════════════════════════════════════════
+function renderTogglePause(){
+  const rp=document.getElementById('right-pane')
+  rp.innerHTML=`
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span class="sb-tag write">Write</span><div class="pane-title" style="margin:0">toggle_pause</div></div>
+  <div class="pane-sub">Owner-only · Pause or resume the contract</div>
+  <div class="section-card">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <span style="font-size:13px;color:var(--t2)">Current state:</span>
+      <span style="font-weight:600;color:${STATE.paused?'var(--red)':'var(--green)'}">${STATE.paused?'⚠ PAUSED':'● ACTIVE'}</span>
+    </div>
+    <button class="btn ${STATE.paused?'btn-primary':'btn-danger'} btn-full" id="tp-btn" onclick="doTogglePause()">
+      <span id="tp-lbl">${STATE.paused?'Resume Contract':'Pause Contract'}</span>
+    </button>
+  </div>`
+}
+async function doTogglePause(){
+  const btn=document.getElementById('tp-btn'); btn.disabled=true
+  document.getElementById('tp-lbl').innerHTML='<span class="spinner"></span>'
+  await sleep(400); STATE.paused=!STATE.paused; btn.disabled=false
+  showToast(`Contract ${STATE.paused?'PAUSED':'RESUMED'}`); renderTogglePause()
+}
 
-// ═══════════════════════════════════════════
+// ════════════════════════════════════════════════════════
+// HELPERS / COMPUTE
+// ════════════════════════════════════════════════════════
+function computeStats(){
+  const e=STATE.evaluations, t=e.length
+  const approved=e.filter(x=>x.verdict==='approved').length
+  const rejected=e.filter(x=>x.verdict==='rejected').length
+  const nr=e.filter(x=>x.verdict==='needs_review').length
+  const hr=e.filter(x=>x.hard_rule_triggered).length
+  const avg=t?Math.round(e.reduce((a,x)=>a+x.total_score,0)/t):0
+  return{total:t,approved,rejected,needs_review:nr,hard_rule_rejections:hr,threshold_rejections:rejected-hr,avg_total_score:avg}
+}
+function computeConfig(){
+  return{owner:'0x9b...96e1',paused:STATE.paused,default_profile:STATE.defaultProfile,total_evaluations:STATE.evaluations.length}
+}
+function computeCatBreakdown(){
+  const r={}; STATE.evaluations.forEach(e=>{r[e.category]=(r[e.category]||0)+1}); return r
+}
+function computeProfileBreakdown(){
+  const r={}; STATE.evaluations.forEach(e=>{r[e.profile]=(r[e.profile]||0)+1}); return r
+}
+function computeHardRuleBreakdown(){
+  const r={}; STATE.evaluations.forEach(e=>{const k=e.hard_rule_triggered||'none';r[k]=(r[k]||0)+1}); return r
+}
+function profileToJSON(p){
+  return{name:p.name,threshold:p.threshold,weights:{relevance:p.weights.relevance,technical:p.weights.technical,originality:p.weights.originality,tone:p.weights.tone,engagement:p.weights.engagement},banned_categories:p.banned.join(','),min_technical:p.minTech,min_tone:p.minTone,description:p.desc,is_default:p.isDefault}
+}
+function evalToFull(e){
+  return{eval_id:e.eval_id,url:e.url,text:e.text,submitter:e.submitter,timestamp:e.timestamp,profile:e.profile,dimensions:e.dimensions,total_score:e.total_score,verdict:e.verdict,category:e.category,confidence:e.confidence,feedback:e.feedback,hard_rule_triggered:e.hard_rule_triggered}
+}
+function evalToSummary(e){
+  return{eval_id:e.eval_id,url:e.url,total_score:e.total_score,verdict:e.verdict,confidence:e.confidence,profile:e.profile,hard_rule:e.hard_rule_triggered}
+}
+
+function showToast(msg,type){
+  const t=document.getElementById('toast')
+  t.style.display='block'
+  t.style.color=type==='green'?'#4ade80':type==='red'?'#f87171':'var(--t2)'
+  t.textContent=msg
+  clearTimeout(window.__toastTimer)
+  window.__toastTimer=setTimeout(()=>t.style.display='none',2800)
+}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+
+// ════════════════════════════════════════════════════════
 // INIT
-// ═══════════════════════════════════════════
-nav('overview', document.querySelector('.sb-item'));
-checkConn();
-setInterval(checkConn, 30000);
+// ════════════════════════════════════════════════════════
+nav('overview',document.querySelector('.sb-item'))
 </script>
 </body>
 </html>
