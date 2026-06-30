@@ -96,6 +96,18 @@ select.fi{cursor:pointer}
 .b-info{background:var(--s3);border:1px solid var(--border)}
 .sample-item{cursor:pointer;padding:8px;background:var(--bg);border:1px solid var(--border);border-radius:7px;margin-bottom:6px;transition:border-color .12s}
 .sample-item:hover{border-color:rgba(124,58,237,.4)}
+/* consensus progress */
+.consensus-box{background:var(--bg);border:1px solid rgba(124,58,237,.3);border-radius:8px;padding:14px;margin-top:10px}
+.consensus-title{font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.validator-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:11.5px}
+.vr-icon{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.vr-name{color:var(--t3);font-family:'JetBrains Mono',monospace;width:90px;flex-shrink:0;font-size:10.5px}
+.vr-status{color:var(--t2)}
+.vr-wait{background:var(--amber);animation:pulse .8s infinite}
+.vr-done{background:var(--green)}
+.vr-err{background:var(--red)}
+.progress-bar{height:3px;background:var(--border);border-radius:2px;margin-top:8px;overflow:hidden}
+.progress-fill{height:100%;background:var(--acc);border-radius:2px;transition:width .4s}
 </style>
 </head>
 <body>
@@ -137,20 +149,22 @@ select.fi{cursor:pointer}
   <button class="sb-item" data-page="toggle_pause"><span class="tag tag-w">W</span>toggle_pause</button>
   <div class="sb-foot">
     <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--t3)">
-      <span class="dot dot-pend" id="foot-dot"></span><span id="foot-status">Init…</span>
+      <span class="dot dot-pend" id="foot-dot"></span><span id="foot-status">Connecting…</span>
     </div>
     <div class="mono" style="font-size:9px;color:var(--t3);margin-top:3px">0x6c1E…dFb93a</div>
+    <div class="mono" style="font-size:9px;color:var(--t3);margin-top:2px" id="acct-display"></div>
   </div>
 </aside>
 <div class="main">
   <div class="topbar">
     <span class="mono" style="font-size:11px;color:var(--t3)">TweetEvaluator_v3</span>
     <span style="color:var(--border)">|</span>
-    <span class="tb-addr" id="copy-addr">0x6c1E…dFb93a</span>
-    <button class="btn btn-s" id="connect-mm" style="padding:3px 10px;font-size:11px">Connect Wallet</button>
-    <span class="mono" id="wallet-addr" style="font-size:10px;color:var(--green);display:none"></span>
-    <div class="net-badge nb-pend" id="net-badge">
+    <span class="tb-addr" id="copy-addr" title="Click to copy contract address">0x6c1E…dFb93a</span>
+    <div class="net-badge nb-pend" id="net-badge" style="margin-left:auto">
       <span class="dot dot-pend" id="net-dot"></span><span id="net-label">Connecting…</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:5px;padding:3px 9px;border-radius:5px;background:var(--accg);border:1px solid rgba(124,58,237,.2);font-size:10px;color:var(--acc2)" id="acct-badge" title="Ephemeral account — no wallet needed">
+      <span style="font-size:8px">◈</span><span id="acct-short">–</span>
     </div>
   </div>
   <div class="body"><div class="right-pane" id="pane"></div></div>
@@ -169,46 +183,54 @@ select.fi{cursor:pointer}
 <script type="module">
 import { createClient, createAccount } from 'genlayer-js';
 import { studionet } from 'genlayer-js/chains';
-import { TransactionStatus, ExecutionResult } from 'genlayer-js/types';
-const CONTRACT = '0x6c1Edb34D13CE3B35eCD55B59F0FABC978dFb93a';
-const EXPLORER = 'https://genlayer-explorer.vercel.app/tx/';
-const CATMAP = {educational:'b-edu',community:'b-com',research:'b-res',meme:'b-meme',spam:'b-spam',fud:'b-fud',shill:'b-shill'};
-const DIMS_K = ['relevance','technical_accuracy','originality','tone_quality','engagement_potential'];
-const DIMS_N = ['Relevance','Technical','Originality','Tone','Engagement'];
-const readClient = createClient({ chain: studionet });
-let writeClient = null;
-let walletConnected = false;
+import { TransactionStatus } from 'genlayer-js/types';
+
+const CONTRACT  = '0x6c1Edb34D13CE3B35eCD55B59F0FABC978dFb93a';
+const EXPLORER  = 'https://genlayer-explorer.vercel.app/tx/';
+
+// ── Clients ────────────────────────────────────────────────────────────────
+// Ephemeral account — generated once per session, no wallet required.
+// All writes go straight to the Studio validators.
+const account     = createAccount();          // random private key, session-only
+const readClient  = createClient({ chain: studionet });
+const writeClient = createClient({ chain: studionet, account });
+
+// Show short account address in UI
+const acctAddr = account.address ?? '';
+if (acctAddr) {
+  const short = acctAddr.slice(0,6)+'…'+acctAddr.slice(-4);
+  document.getElementById('acct-short').textContent   = short;
+  document.getElementById('acct-display').textContent = short;
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+const CATMAP  = {educational:'b-edu',community:'b-com',research:'b-res',meme:'b-meme',spam:'b-spam',fud:'b-fud',shill:'b-shill'};
+const DIMS_K  = ['relevance','technical_accuracy','originality','tone_quality','engagement_potential'];
+const DIMS_N  = ['Relevance','Technical','Originality','Tone','Engagement'];
+
+function parse(r) {
+  if (typeof r === 'string') { try { return JSON.parse(r); } catch { return r; } }
+  return r;
+}
+
 async function glRead(fn, args = []) {
-  const result = await readClient.readContract({
+  const r = await readClient.readContract({
     address: CONTRACT,
     functionName: fn,
     args: args.length ? args : undefined,
   });
-  if (typeof result === 'string') { try { return JSON.parse(result); } catch { return result; } }
-  return result;
+  return parse(r);
 }
+
 async function glWrite(fn, args = []) {
-  if (!writeClient) {
-    if (window.ethereum) {
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-      writeClient = createClient({
-        chain: studionet,
-        account: accounts[0],
-        provider: window.ethereum,
-      });
-    } else {
-      const account = createAccount();
-      writeClient = createClient({ chain: studionet, account });
-    }
-  }
-  const txHash = await writeClient.writeContract({
+  return await writeClient.writeContract({
     address: CONTRACT,
     functionName: fn,
-    args: args,
+    args,
     value: BigInt(0),
   });
-  return txHash;
 }
+
 async function glWait(txHash, maxMs = 180000) {
   const t0 = Date.now();
   while (Date.now() - t0 < maxMs) {
@@ -223,64 +245,61 @@ async function glWait(txHash, maxMs = 180000) {
   }
   throw new Error('Timeout: consensus took too long');
 }
+
+// ── Network status ─────────────────────────────────────────────────────────
 async function checkConn() {
   setNet('pend','Connecting…');
   try {
     const n = await glRead('get_count');
-    setNet('live', `Live · ${n} evals`);
+    setNet('live', `Studionet · ${n} evals`);
     setFoot('live','Connected');
   } catch(e) {
     setNet('err','RPC Error');
     setFoot('err','No connection');
   }
 }
-function setNet(s,t){
-  const b=document.getElementById('net-badge');
-  const d=document.getElementById('net-dot');
-  b.className='net-badge '+(s==='live'?'nb-live':s==='err'?'nb-err':'nb-pend');
-  d.className='dot '+(s==='live'?'dot-live':s==='err'?'dot-err':'dot-pend');
-  document.getElementById('net-label').textContent=t;
+
+function setNet(s, t) {
+  const b = document.getElementById('net-badge');
+  const d = document.getElementById('net-dot');
+  b.className = 'net-badge ' + (s==='live'?'nb-live':s==='err'?'nb-err':'nb-pend');
+  d.className = 'dot ' + (s==='live'?'dot-live':s==='err'?'dot-err':'dot-pend');
+  document.getElementById('net-label').textContent = t;
 }
-function setFoot(s,t){
-  document.getElementById('foot-dot').className='dot '+(s==='live'?'dot-live':s==='err'?'dot-err':'dot-pend');
-  document.getElementById('foot-status').textContent=t;
+function setFoot(s, t) {
+  document.getElementById('foot-dot').className = 'dot ' + (s==='live'?'dot-live':s==='err'?'dot-err':'dot-pend');
+  document.getElementById('foot-status').textContent = t;
 }
+
+// ── UI helpers ─────────────────────────────────────────────────────────────
+function pane(html)  { document.getElementById('pane').innerHTML = html; }
+function toast(msg, type) {
+  const t = document.getElementById('toast');
+  t.style.display = 'block';
+  t.style.color   = type==='green'?'#4ade80':type==='red'?'#f87171':'var(--t2)';
+  t.textContent   = msg;
+  clearTimeout(window.__tt);
+  window.__tt = setTimeout(() => t.style.display='none', 3200);
+}
+function kv(obj) {
+  return Object.entries(obj).map(([k,v]) => `
+  <div style="display:flex;justify-content:space-between;font-size:11.5px;padding:4px 0;border-bottom:1px solid var(--border)">
+    <span style="color:var(--t3)">${k}</span><span class="mono" style="color:var(--t1)">${v}</span>
+  </div>`).join('');
+}
+
+// ── Sidebar nav ────────────────────────────────────────────────────────────
 document.getElementById('sidebar').addEventListener('click', e => {
   const btn = e.target.closest('[data-page]');
   if (!btn) return;
-  document.querySelectorAll('.sb-item').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   PAGES[btn.dataset.page]?.();
 });
 document.getElementById('copy-addr').addEventListener('click', () =>
-  navigator.clipboard.writeText(CONTRACT).then(()=>toast('Copied!')));
-document.getElementById('connect-mm').addEventListener('click', async () => {
-  if (!window.ethereum) { toast('MetaMask not found','red'); return; }
-  try {
-    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-    const addr = accounts[0];
-    writeClient = createClient({ chain: studionet, account: addr, provider: window.ethereum });
-    walletConnected = true;
-    document.getElementById('wallet-addr').textContent = addr.slice(0,6)+'…'+addr.slice(-4);
-    document.getElementById('wallet-addr').style.display = 'inline';
-    document.getElementById('connect-mm').textContent = 'Connected';
-    document.getElementById('connect-mm').disabled = true;
-    toast('Wallet connected ✓','green');
-  } catch(e) { toast(e.message,'red'); }
-});
-function pane(html){ document.getElementById('pane').innerHTML = html; }
-function toast(msg,type){
-  const t=document.getElementById('toast');
-  t.style.display='block';
-  t.style.color=type==='green'?'#4ade80':type==='red'?'#f87171':'var(--t2)';
-  t.textContent=msg;
-  clearTimeout(window.__tt);
-  window.__tt=setTimeout(()=>t.style.display='none',3200);
-}
-function kv(obj){return Object.entries(obj).map(([k,v])=>`
-  <div style="display:flex;justify-content:space-between;font-size:11.5px;padding:4px 0;border-bottom:1px solid var(--border)">
-    <span style="color:var(--t3)">${k}</span><span class="mono" style="color:var(--t1)">${v}</span>
-  </div>`).join('');}
+  navigator.clipboard.writeText(CONTRACT).then(() => toast('Copied!')));
+
+// ── Pages ──────────────────────────────────────────────────────────────────
 async function pageOverview() {
   pane(`<div class="pane-title">Contract Overview</div>
     <div class="pane-sub mono" style="font-size:10px;color:var(--acc2)">${CONTRACT}</div>
@@ -290,8 +309,10 @@ async function pageOverview() {
     const stats=s||{}, cfg=c||{}, profiles=Array.isArray(pr)?pr:[];
     pane(`<div class="pane-title">Contract Overview</div>
     <div class="pane-sub mono" style="font-size:10px;color:var(--acc2)">${CONTRACT}</div>
-    <div class="banner b-ok"><span style="color:var(--green)">●</span><span style="color:var(--t2)">Connected · Live data from GenLayer Studio</span>
-      <button class="btn btn-s" style="margin-left:auto;padding:2px 9px;font-size:11px" data-page="overview">↻ Refresh</button></div>
+    <div class="banner b-ok"><span style="color:var(--green)">●</span>
+      <span style="color:var(--t2)">Studionet · direct connection · no wallet required</span>
+      <button class="btn btn-s" style="margin-left:auto;padding:2px 9px;font-size:11px" data-page="overview">↻ Refresh</button>
+    </div>
     <div class="g4" style="margin-bottom:12px">
       <div class="stat"><div class="stat-lbl">Evaluations</div><div class="stat-val">${stats.total||0}</div><div class="stat-sub">${profiles.length} profiles</div></div>
       <div class="stat"><div class="stat-lbl">Approved</div><div class="stat-val" style="color:var(--green)">${stats.approved||0}</div><div class="stat-sub">${stats.total?Math.round((stats.approved||0)/stats.total*100):0}%</div></div>
@@ -315,16 +336,25 @@ async function pageOverview() {
         <button class="btn btn-s" data-page="get_profiles">Get Profiles</button>
         <button class="btn btn-s" data-page="get_needs_review">Needs Review</button>
       </div></div>`);
+    // re-bind quick action buttons
+    document.querySelectorAll('[data-page]').forEach(btn => {
+      if (btn.closest('.card')) btn.addEventListener('click', () => {
+        document.querySelectorAll('.sb-item').forEach(b => b.classList.remove('active'));
+        document.querySelector(`.sb-item[data-page="${btn.dataset.page}"]`)?.classList.add('active');
+        PAGES[btn.dataset.page]?.();
+      });
+    });
   } catch(e) {
     document.getElementById('pane').insertAdjacentHTML('beforeend',
       `<div class="banner b-err"><span style="color:var(--red)">✕</span><span style="color:var(--t2)">${e.message}</span>
-       <button class="btn btn-s" style="margin-left:auto;padding:2px 9px;font-size:11px" data-page="overview">Retry</button></div>`);
+       <button class="btn btn-s" style="margin-left:auto;padding:2px 9px;font-size:11px" onclick="PAGES.overview()">Retry</button></div>`);
   }
 }
+
 function pageRead(fn) {
   pane(`<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
     <span class="tag tag-r">Read</span><div class="pane-title" style="margin:0">${fn}</div></div>
-  <div class="pane-sub">No parameters</div>
+  <div class="pane-sub">No parameters — reads directly from validators</div>
   <div class="card"><button class="btn btn-p" id="call-btn">Call Contract</button></div>
   <div class="card" style="display:none" id="out-card">
     <div class="out-lbl"><span>Return Value</span><button class="copy-btn" id="copy-out">Copy</button></div>
@@ -342,6 +372,7 @@ function pageRead(fn) {
   document.getElementById('copy-out').onclick = () =>
     navigator.clipboard.writeText(document.getElementById('out-box').textContent).then(()=>toast('Copied!'));
 }
+
 function pageReadP(fn, fieldsHTML, getArgs) {
   pane(`<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
     <span class="tag tag-r">Read</span><div class="pane-title" style="margin:0">${fn}</div></div>
@@ -353,31 +384,45 @@ function pageReadP(fn, fieldsHTML, getArgs) {
   document.getElementById('call-btn').onclick = async () => {
     const btn=document.getElementById('call-btn');btn.disabled=true;btn.innerHTML='<span class="spin"></span>';
     document.getElementById('out-card').style.display='block';
-    try { const r=await glRead(fn,getArgs()); document.getElementById('out-box').textContent=typeof r==='object'?JSON.stringify(r,null,2):String(r); }
-    catch(e){ document.getElementById('out-box').innerHTML=`<span style="color:var(--red)">${e.message}</span>`; }
+    try {
+      const r=await glRead(fn,getArgs());
+      document.getElementById('out-box').textContent=typeof r==='object'?JSON.stringify(r,null,2):String(r);
+    } catch(e){ document.getElementById('out-box').innerHTML=`<span style="color:var(--red)">${e.message}</span>`; }
     btn.disabled=false;btn.textContent='Call Contract';
   };
   document.getElementById('copy-out').onclick = () =>
     navigator.clipboard.writeText(document.getElementById('out-box').textContent).then(()=>toast('Copied!'));
 }
+
 function pageWrite(fn, fieldsHTML, getArgs, danger) {
   pane(`<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
     <span class="tag tag-w">Write</span><div class="pane-title" style="margin:0">${fn}</div></div>
+  <div class="banner b-info" style="margin-bottom:12px">
+    <span style="color:var(--acc2)">◈</span>
+    <span style="color:var(--t3)">Transaction signed by ephemeral session account — no wallet popup</span>
+  </div>
   <div class="card">${fieldsHTML}
     <button class="${danger?'btn btn-d':'btn btn-p'} btn-full" style="margin-top:10px" id="wr-btn">Send Transaction</button></div>
   <div class="card" style="display:none" id="wr-res"><div class="card-title">Result</div><div id="wr-out"></div></div>`);
   document.getElementById('wr-btn').onclick = async () => {
-    const btn=document.getElementById('wr-btn');btn.disabled=true;btn.innerHTML='<span class="spin"></span>';
+    const btn=document.getElementById('wr-btn');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Sending…';
     try {
       const args=getArgs();
       const txHash=await glWrite(fn,args);
       document.getElementById('wr-res').style.display='block';
-      document.getElementById('wr-out').innerHTML=`<div class="tx-box" style="border-color:rgba(16,185,129,.3)">✓ TX: <a href="${EXPLORER}${txHash}" target="_blank">${txHash}</a></div>`;
+      document.getElementById('wr-out').innerHTML=`<div class="tx-box" style="border-color:rgba(16,185,129,.3)">
+        ✓ TX: <a href="${EXPLORER}${txHash}" target="_blank">${txHash}</a></div>`;
       toast('Sent ✓','green');
-    } catch(e){ document.getElementById('wr-res').style.display='block';document.getElementById('wr-out').innerHTML=`<span style="color:var(--red)">${e.message}</span>`;toast(e.message,'red'); }
+    } catch(e){
+      document.getElementById('wr-res').style.display='block';
+      document.getElementById('wr-out').innerHTML=`<span style="color:var(--red)">${e.message}</span>`;
+      toast(e.message,'red');
+    }
     btn.disabled=false;btn.textContent='Send Transaction';
   };
 }
+
+// ── Submit tweet with consensus progress ───────────────────────────────────
 function buildResult(ev, txHash) {
   if(!ev) return '<div style="color:var(--t3)">No result data</div>';
   const ok=ev.verdict==='approved';
@@ -386,46 +431,62 @@ function buildResult(ev, txHash) {
   const dims=ev.dimensions||{};
   return `
   <div class="verdict ${ok?'v-ok':'v-no'}">
-    <div><div class="vbadge ${ok?'vb-ok':'vb-no'}">${ok?'✓ APPROVED':'✗ REJECTED'}</div>
+    <div>
+      <div class="vbadge ${ok?'vb-ok':'vb-no'}">${ok?'✓ APPROVED':'✗ REJECTED'}</div>
       <div class="v-score" style="color:${sc_c};margin-top:7px">${sc}<span style="font-size:16px;font-weight:400;color:var(--t3)">/100</span></div>
-      <div style="font-size:10px;color:var(--t3);margin-top:2px">profile: ${ev.profile||'—'}</div></div>
+      <div style="font-size:10px;color:var(--t3);margin-top:2px">profile: ${ev.profile||'—'}</div>
+    </div>
     <div style="margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:5px">
       <span class="badge ${CATMAP[ev.category]||'b-edu'}">${ev.category||'—'}</span>
       <span style="font-size:10px;color:var(--t3)">${ev.confidence||'—'}</span>
     </div>
   </div>
-  ${ev.hard_rule_triggered?`<div class="hard-rule"><div style="font-size:9.5px;font-weight:600;color:#f87171;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">Hard Rule</div><div class="mono" style="font-size:11.5px;color:#fca5a5">${ev.hard_rule_triggered}</div></div>`:''}
+  ${ev.hard_rule_triggered?`<div class="hard-rule">
+    <div style="font-size:9.5px;font-weight:600;color:#f87171;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">Hard Rule</div>
+    <div class="mono" style="font-size:11.5px;color:#fca5a5">${ev.hard_rule_triggered}</div>
+  </div>`:''}
   ${DIMS_K.map((k,i)=>{const v=dims[k]||0;const c=v>=70?'var(--green)':v>=40?'var(--amber)':'var(--red)';return`
-  <div class="dim-row"><div class="dim-top"><span>${DIMS_N[i]}</span><span class="mono" style="color:${c}">${v}</span></div>
-  <div class="dim-track"><div class="dim-fill" style="width:${v}%;background:${c}"></div></div></div>`}).join('')}
+  <div class="dim-row">
+    <div class="dim-top"><span>${DIMS_N[i]}</span><span class="mono" style="color:${c}">${v}</span></div>
+    <div class="dim-track"><div class="dim-fill" style="width:${v}%;background:${c}"></div></div>
+  </div>`}).join('')}
   <div style="background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:9px;margin-top:9px">
     <div style="font-size:9.5px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">AI Feedback</div>
     <div style="font-size:12px;color:var(--t2);line-height:1.6">${ev.feedback||'—'}</div>
   </div>
-  <div class="tx-box">Eval ID: <span style="color:var(--t1)">${ev.eval_id||'—'}</span><br>TX: <a href="${EXPLORER}${txHash}" target="_blank">${txHash}</a></div>`;
+  <div class="tx-box">
+    Eval ID: <span style="color:var(--t1)">${ev.eval_id||'—'}</span><br>
+    TX: <a href="${EXPLORER}${txHash}" target="_blank">${txHash}</a>
+  </div>`;
 }
-const SAMPLES=[
+
+const SAMPLES = [
   {url:'https://x.com/researcher/status/001',text:"Deep dive into GenLayer's Equivalence Principle — heterogeneous AI validators reaching deterministic consensus. Full benchmark data. 10M test cases, zero failures. 🧵",cat:'research',hint:'High score'},
   {url:'https://x.com/genlayer/status/002',text:"🚀 GenLayer Testnet: 394 validators live. Optimistic Democracy consensus time down 40%. Stability under adversarial conditions confirmed.",cat:'community',hint:'Community'},
   {url:'https://x.com/memer/status/004',text:"GenLayer validators when tweet is slightly ambiguous 😭 [three validators arguing: APPROVED / REJECTED / idk lol]",cat:'meme',hint:'Meme · banned in strict'},
   {url:'https://x.com/fudder/status/005',text:"GenLayer is vaporware. No real users, no real validators. 'Equivalence Principle' is just marketing BS.",cat:'fud',hint:'FUD · hard reject'},
   {url:'https://x.com/spambot/status/006',text:"🚨 FREE TOKENS 🚨 Follow + RT + wallet. GenLayer airdrop NOW. Limited 1000 spots!!!! 💰💰💰",cat:'spam',hint:'Spam · hard reject'},
 ];
+
 function pageSubmitTweet() {
   pane(`<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
     <span class="tag tag-w">Write</span><div class="pane-title" style="margin:0">submit_tweet</div></div>
-  <div class="pane-sub">Submit tweet for AI evaluation</div>
+  <div class="pane-sub">Sends directly to GenLayer validators — no wallet needed</div>
   <div style="display:grid;grid-template-columns:1fr 270px;gap:12px;align-items:start">
     <div>
+      <div class="banner b-info">
+        <span style="color:var(--acc2)">◈</span>
+        <span style="color:var(--t3)">Ephemeral session account · signed locally · goes straight to validators</span>
+      </div>
       <div class="card">
         <div class="field"><label>tweet_url</label><input class="fi" id="st-url" value="https://x.com/genlayer/status/1234"></div>
         <div class="field"><label>tweet_text</label>
           <textarea class="fi" id="st-text" rows="6">Just published a deep dive into GenLayer's Equivalence Principle — heterogeneous AI validators reaching deterministic consensus. Benchmark data included. 🧵</textarea></div>
-        <div class="field"><label>profile (пусто = default)</label>
+        <div class="field"><label>profile (empty = default)</label>
           <select class="fi" id="st-prof"><option value="">— Default —</option><option>lenient</option><option>moderate</option><option>strict</option></select></div>
         <div style="display:flex;gap:8px;margin-top:6px">
           <button class="btn btn-p" id="st-btn">Send Transaction</button>
-          <button class="btn btn-s" id="st-sample">Load sample</button>
+          <button class="btn btn-s" id="st-sample">Random sample</button>
         </div>
       </div>
       <div class="card" style="display:none" id="st-res-card"><div class="card-title">Result</div><div id="st-res"></div></div>
@@ -440,51 +501,92 @@ function pageSubmitTweet() {
       </div>`).join('')}
     </div>
   </div>`);
+
   document.querySelectorAll('[data-si]').forEach(el => {
     el.addEventListener('click', () => {
       const s = SAMPLES[+el.dataset.si];
-      document.getElementById('st-url').value = s.url;
+      document.getElementById('st-url').value  = s.url;
       document.getElementById('st-text').value = s.text;
     });
   });
   document.getElementById('st-sample').onclick = () => {
     const s = SAMPLES[Math.floor(Math.random()*SAMPLES.length)];
-    document.getElementById('st-url').value = s.url;
+    document.getElementById('st-url').value  = s.url;
     document.getElementById('st-text').value = s.text;
   };
+
   document.getElementById('st-btn').onclick = async () => {
-    const url = document.getElementById('st-url').value.trim();
+    const url  = document.getElementById('st-url').value.trim();
     const text = document.getElementById('st-text').value.trim();
     const prof = document.getElementById('st-prof').value;
-    if (!url||!text) { toast('URL и текст обязательны','red'); return; }
-    const btn = document.getElementById('st-btn');
+    if (!url||!text) { toast('URL and text required','red'); return; }
+
+    const btn  = document.getElementById('st-btn');
     btn.disabled=true; btn.innerHTML='<span class="spin"></span> Sending…';
+
     try {
-      const fn = prof ? 'submit_tweet' : 'submit_tweet_default';
+      const fn   = prof ? 'submit_tweet' : 'submit_tweet_default';
       const args = prof ? [url,text,prof] : [url,text];
       const txHash = await glWrite(fn, args);
-      btn.innerHTML = '<span class="spin"></span> Consensus…';
+
+      btn.innerHTML = '<span class="spin"></span> Waiting for consensus…';
       const card = document.getElementById('st-res-card');
       card.style.display='block';
-      document.getElementById('st-res').innerHTML = `<div class="tx-box">TX: <a href="${EXPLORER}${txHash}" target="_blank">${txHash}</a>
-        <div class="loading"><span class="spin"></span> Validators evaluating…</div></div>`;
+      document.getElementById('st-res').innerHTML = `
+        <div class="tx-box">
+          TX: <a href="${EXPLORER}${txHash}" target="_blank">${txHash.slice(0,20)}…</a>
+        </div>
+        <div class="consensus-box">
+          <div class="consensus-title">
+            <span class="spin"></span> Validators evaluating…
+          </div>
+          <div style="font-size:11px;color:var(--t3)">AI consensus in progress — this takes 30–120 seconds</div>
+          <div class="progress-bar" style="margin-top:10px">
+            <div class="progress-fill" id="prog" style="width:0%"></div>
+          </div>
+          <div id="prog-label" style="font-size:10px;color:var(--t3);margin-top:5px">Submitting…</div>
+        </div>`;
+
+      // Animate progress bar while waiting
+      const stages = ['Submitting to leader…','Leader executing AI…','Validators cross-checking…','Applying Equivalence Principle…','Reaching consensus…','Finalizing…'];
+      let si = 0;
+      const pbar  = document.getElementById('prog');
+      const plbl  = document.getElementById('prog-label');
+      const timer = setInterval(() => {
+        if (si < stages.length) {
+          pbar.style.width = Math.round((si+1)/stages.length*85)+'%';
+          plbl.textContent = stages[si++];
+        }
+      }, 15000);
+
       await glWait(txHash);
+      clearInterval(timer);
+      pbar.style.width = '100%';
+
       const count = await glRead('get_count');
+      let resultHTML = '';
       if (count > 0) {
         const ev = await glRead('get_evaluation',[count-1]);
-        document.getElementById('st-res').innerHTML = buildResult(typeof ev==='string'?JSON.parse(ev):ev, txHash);
+        resultHTML = buildResult(typeof ev==='string'?JSON.parse(ev):ev, txHash);
       } else {
-        document.getElementById('st-res').innerHTML = `<div class="tx-box" style="border-color:rgba(16,185,129,.3);color:var(--green)">✓ Finalized · <a href="${EXPLORER}${txHash}" target="_blank">${txHash}</a></div>`;
+        resultHTML = `<div class="tx-box" style="border-color:rgba(16,185,129,.3);color:var(--green)">
+          ✓ Finalized · <a href="${EXPLORER}${txHash}" target="_blank">${txHash}</a></div>`;
       }
-      toast('Submitted ✓','green');
+      document.getElementById('st-res').innerHTML = resultHTML;
+      toast('Evaluation complete ✓','green');
+
     } catch(e) {
       document.getElementById('st-res-card').style.display='block';
-      document.getElementById('st-res').innerHTML=`<div style="color:var(--red);padding:10px;background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.2);border-radius:7px">${e.message}</div>`;
+      document.getElementById('st-res').innerHTML=`
+        <div style="color:var(--red);padding:10px;background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.2);border-radius:7px">
+          ${e.message}</div>`;
       toast(e.message,'red');
     }
     btn.disabled=false; btn.textContent='Send Transaction';
   };
 }
+
+// ── Page registry ──────────────────────────────────────────────────────────
 const PAGES = {
   overview: pageOverview,
   get_stats:()=>pageRead('get_stats'),
@@ -540,9 +642,11 @@ const PAGES = {
     `<div class="field"><label>name</label><select class="fi" id="sdp-n"><option>lenient</option><option selected>moderate</option><option>strict</option></select></div>`,
     ()=>[document.getElementById('sdp-n').value]),
   toggle_pause:()=>pageWrite('toggle_pause',
-    `<div style="font-size:12px;color:var(--t3);margin-bottom:8px">Toggles pause state. Check Overview для текущего статуса.</div>`,
+    `<div style="font-size:12px;color:var(--t3);margin-bottom:8px">Toggles pause state. Check Overview for current status.</div>`,
     ()=>[], true),
 };
+
+// ── Init ───────────────────────────────────────────────────────────────────
 PAGES.overview();
 checkConn();
 setInterval(checkConn, 30000);
