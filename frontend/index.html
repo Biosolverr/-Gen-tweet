@@ -186,7 +186,7 @@ import { studionet } from 'genlayer-js/chains';
 import { TransactionStatus } from 'genlayer-js/types';
 
 const CONTRACT  = '0x6c1Edb34D13CE3B35eCD55B59F0FABC978dFb93a';
-const EXPLORER  = 'https://genlayer-explorer.vercel.app/tx/';
+const EXPLORER  = 'https://explorer-studio.genlayer.com/tx/';
 
 // ── Clients ────────────────────────────────────────────────────────────────
 // Ephemeral account — generated once per session, no wallet required.
@@ -586,6 +586,84 @@ function pageSubmitTweet() {
   };
 }
 
+// ── submit_tweet_default с показом результата ──────────────────────────────
+function pageSubmitTweetDefault() {
+  pane(`<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+    <span class="tag tag-w">Write</span><div class="pane-title" style="margin:0">submit_tweet_default</div></div>
+  <div class="pane-sub">Отправляет напрямую валидаторам Studio — без кошелька</div>
+  <div class="banner b-info">
+    <span style="color:var(--acc2)">◈</span>
+    <span style="color:var(--t3)">Ephemeral session account · signed locally · goes straight to validators</span>
+  </div>
+  <div class="card">
+    <div class="field"><label>tweet_url</label><input class="fi" id="sd-url" placeholder="https://x.com/user/status/123"></div>
+    <div class="field"><label>tweet_text</label><textarea class="fi" id="sd-text" rows="5" placeholder="Текст твита…"></textarea></div>
+    <button class="btn btn-p btn-full" style="margin-top:8px" id="sd-btn">Send Transaction</button>
+  </div>
+  <div class="card" style="display:none" id="sd-res-card"><div class="card-title">Result</div><div id="sd-res"></div></div>`);
+
+  document.getElementById('sd-btn').onclick = async () => {
+    const url  = document.getElementById('sd-url').value.trim();
+    const text = document.getElementById('sd-text').value.trim();
+    if (!url || !text) { toast('URL и текст обязательны', 'red'); return; }
+
+    const btn = document.getElementById('sd-btn');
+    btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Sending…';
+
+    try {
+      const txHash = await glWrite('submit_tweet_default', [url, text]);
+
+      btn.innerHTML = '<span class="spin"></span> Waiting for consensus…';
+      const card = document.getElementById('sd-res-card');
+      card.style.display = 'block';
+      document.getElementById('sd-res').innerHTML = `
+        <div class="tx-box">TX: <a href="${EXPLORER}${txHash}" target="_blank">${txHash.slice(0,22)}…</a></div>
+        <div class="consensus-box">
+          <div class="consensus-title"><span class="spin"></span> Validators evaluating…</div>
+          <div style="font-size:11px;color:var(--t3)">AI consensus in progress — 30–120 sec</div>
+          <div class="progress-bar" style="margin-top:10px">
+            <div class="progress-fill" id="sd-prog" style="width:0%"></div>
+          </div>
+          <div id="sd-prog-lbl" style="font-size:10px;color:var(--t3);margin-top:5px">Submitting…</div>
+        </div>`;
+
+      const stages = ['Submitting to leader…','Leader executing AI…','Validators cross-checking…','Equivalence Principle…','Reaching consensus…','Finalizing…'];
+      let si = 0;
+      const pbar = document.getElementById('sd-prog');
+      const plbl = document.getElementById('sd-prog-lbl');
+      const timer = setInterval(() => {
+        if (si < stages.length) {
+          pbar.style.width = Math.round((si+1)/stages.length*85)+'%';
+          plbl.textContent = stages[si++];
+        }
+      }, 15000);
+
+      await glWait(txHash);
+      clearInterval(timer);
+      pbar.style.width = '100%';
+
+      const count = await glRead('get_count');
+      let html = '';
+      if (count > 0) {
+        const ev = await glRead('get_evaluation', [count - 1]);
+        html = buildResult(typeof ev === 'string' ? JSON.parse(ev) : ev, txHash);
+      } else {
+        html = `<div class="tx-box" style="border-color:rgba(16,185,129,.3);color:var(--green)">
+          ✓ Finalized · <a href="${EXPLORER}${txHash}" target="_blank">${txHash}</a></div>`;
+      }
+      document.getElementById('sd-res').innerHTML = html;
+      toast('Evaluation complete ✓', 'green');
+
+    } catch(e) {
+      document.getElementById('sd-res-card').style.display = 'block';
+      document.getElementById('sd-res').innerHTML = `
+        <div style="color:var(--red);padding:10px;background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.2);border-radius:7px">${e.message}</div>`;
+      toast(e.message, 'red');
+    }
+    btn.disabled = false; btn.textContent = 'Send Transaction';
+  };
+}
+
 // ── Page registry ──────────────────────────────────────────────────────────
 const PAGES = {
   overview: pageOverview,
@@ -615,10 +693,7 @@ const PAGES = {
     `<div class="field"><label>n (u8)</label><input class="fi" type="number" id="p0" value="5" min="1" max="50"></div>`,
     ()=>[parseInt(document.getElementById('p0').value||5)]),
   submit_tweet: pageSubmitTweet,
-  submit_tweet_default:()=>pageWrite('submit_tweet_default',
-    `<div class="field"><label>tweet_url</label><input class="fi" id="sd-url" value="https://x.com/genlayer/status/9999"></div>
-     <div class="field"><label>tweet_text</label><textarea class="fi" id="sd-text" rows="4">GenLayer just hit 4.7K contributions! The community is growing — builders, validators, researchers all contributing. 🚀</textarea></div>`,
-    ()=>[document.getElementById('sd-url').value.trim(), document.getElementById('sd-text').value.trim()]),
+  submit_tweet_default: pageSubmitTweetDefault,
   admin_override:()=>pageWrite('admin_override',
     `<div class="field"><label>eval_id</label><input class="fi" id="ao-id" placeholder="paste eval_id"></div>
      <div class="field"><label>new_verdict</label><select class="fi" id="ao-v"><option>approved</option><option>rejected</option><option>needs_review</option></select></div>
@@ -653,3 +728,4 @@ setInterval(checkConn, 30000);
 </script>
 </body>
 </html>
+
